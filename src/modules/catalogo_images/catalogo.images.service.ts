@@ -1,0 +1,101 @@
+import {
+  MissingFieldError,
+  NotFoundError,
+  ValidationError,
+} from '../../../errors/errors.js'
+import { prisma } from '../../../prisma/prismaClient.js'
+import type {
+  CreateCatalogoImagesInput,
+  UpdateCatalogoImagesInput,
+} from './catalogo.images.schema.js'
+
+export interface CreateCatalogoImagesSchemaDTO
+  extends CreateCatalogoImagesInput {}
+
+export interface UpdateCatalogoImagesSchemaDTO
+  extends UpdateCatalogoImagesInput {}
+
+export class CatalogoImagesService {
+  async createCatalogoImages(data: CreateCatalogoImagesSchemaDTO) {
+    if (!data.posicao || !data.url) {
+      throw new MissingFieldError()
+    }
+
+    const id_catalogo = data.catalogo_id
+
+    const catalogoTeste = await prisma.catalogo.findUnique({
+      where: { id_catalogo },
+    })
+
+    if (!catalogoTeste) {
+      throw new ValidationError('Erro ao encontrar o item da imagem')
+    }
+    try {
+      const imagem = await prisma.catalogo_images.create({
+        data: {
+          catalogo_id: data.catalogo_id,
+          url: data.url,
+          posicao: data.posicao,
+        },
+      })
+
+      return imagem
+    } catch (err: any) {
+      throw new ValidationError('Erro ao criar a imagem no banco de dados', err)
+    }
+  }
+
+  async getCatalogoImagesByID(id: string) {
+    try {
+      const imagem = await prisma.catalogo_images.findUnique({
+        where: { id },
+      })
+
+      if (!imagem) {
+        throw new NotFoundError('Não foi possível encontrar a imagem')
+      }
+
+      return imagem
+    } catch (err: any) {
+      throw new ValidationError('Erro ao encontrar a imagem', err)
+    }
+  }
+
+  async updateCatalogoImages(id: string, data: UpdateCatalogoImagesSchemaDTO) {
+    try {
+      const imagem = await prisma.catalogo_images.update({
+        where: { id },
+        data: {
+          url: data.url,
+          posicao: data.posicao,
+        },
+      })
+
+      if (!(await prisma.catalogo_images.findUnique({ where: { id } }))) {
+        throw new NotFoundError('Erro ao encontrar a imagem para atualizar')
+      }
+
+      return imagem
+    } catch (err: any) {
+      throw new ValidationError('Não foi possível atualizar a imagem', err)
+    }
+  }
+
+  async deleteCatalogoImages(id: string) {
+    try {
+      const imagem = await prisma.catalogo_images.delete({
+        where: { id },
+      })
+
+      if (!(await prisma.catalogo_images.findUnique({ where: { id } }))) {
+        throw new NotFoundError('Erro ao encontrar a imagem para deletar')
+      }
+
+      return imagem
+    } catch (err: any) {
+      throw new ValidationError('Não foi possível deletar a imagem', err)
+    }
+  }
+}
+
+export const catalogoImagesService = new CatalogoImagesService()

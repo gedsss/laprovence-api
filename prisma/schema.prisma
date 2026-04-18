@@ -1,0 +1,135 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  gestor
+  noivo
+}
+
+enum Setor {
+  Mesa_posta
+  Prataria
+  Adornos
+  Aromas
+  Mobiliarios
+  Vasos
+  Complementos
+}
+
+enum StatusCatalogo {
+  Ativo
+  Inativo
+}
+
+enum StatusLista {
+  Ativa
+  Arquivada
+}
+
+enum StatusPagamento {
+  Pendente
+  Aprovado
+  Rejeitado
+}
+
+model user {
+  id               String    @db.Uuid @default(dbgenerated("gen_random_uuid()")) @unique
+  nome_noiva       String    @db.VarChar(50)
+  nome_noivo       String    @db.VarChar(50) 
+  email            String    @db.VarChar(255) @unique
+  telefone         String    @db.VarChar(16) @unique
+  data_casamento   DateTime  @db.Date
+  senha            String    @db.VarChar(30)
+  foto_casal       String?   @db.Text
+  role             Role      @default(noivo)
+  is_system        Boolean   @default(false)
+  created_at       DateTime  @db.Timestamptz() @default(now())
+  updated_at       DateTime  @db.Timestamptz() @default(now())
+  listas           listas[]
+}
+
+model catalogo {
+  id              String              @db.Uuid @default(dbgenerated("gen_random_uuid()")) @unique
+  nome            String              @db.Text
+  marca           String?             @db.Text
+  tamanho         String?             @db.Text
+  descricao       String?             @db.Text
+  preco           Decimal             @db.Decimal(10, 2) @default(0)
+  setor           Setor       
+  estoque         Int                 @db.Integer @default(0)
+  quantidade      Int                 @db.Integer @default(1)
+  peso            Decimal             @db.Decimal(6, 2) @default(0)
+  status          StatusCatalogo      @default(Ativo)
+  version         Int                 @db.Integer @default(1)
+  created_at      DateTime            @db.Timestamptz() @default(now())
+  updated_at      DateTime            @db.Timestamptz() @default(now())
+  catalogo_images catalogo_images[]
+  lista_itens     lista_itens[]
+  compras         compras[]
+}
+
+model catalogo_images {
+  id            String      @db.Uuid @default(dbgenerated("gen_random_uuid()")) @unique
+  catalogo_id   String      @db.Uuid
+  catalogo      catalogo    @relation(fields: [catalogo_id], references: [id])
+  url           String      @db.Text
+  posicao       Int         @db.Integer @default(0)
+  created_at    DateTime    @db.Timestamptz() @default(now())
+}
+
+model listas {
+  id                      String           @db.Uuid @default(dbgenerated("gen_random_uuid()")) @unique
+  codigo                  String           @db.Char(6) @unique
+  user_id                 String           @db.Uuid
+  user                    user             @relation(fields: [user_id], references: [id])
+  nome_noivos             String           @db.Text
+  telefone                String?          @db.Text
+  data_casamento          DateTime?        @db.Date
+  foto_casal              String?          @db.Text
+  mensagem_boas_vindas    String?          @db.Text
+  status                  StatusLista      @default(Ativa)
+  created_at              DateTime         @db.Timestamptz() @default(now())
+  updated_at              DateTime         @db.Timestamptz() @default(now())
+  lista_itens             lista_itens[]  
+  compras                 compras[]
+}
+
+model lista_itens {
+  id            String      @db.Uuid @default(dbgenerated("gen_random_uuid()")) @unique
+  listas_id     String      @db.Uuid
+  listas        listas      @relation(fields: [listas_id], references: [id])
+  catalogo_id   String      @db.Uuid
+  catalogo      catalogo    @relation(fields: [catalogo_id], references: [id])
+  added_at      DateTime    @db.Timestamptz() @default(now())
+}
+
+model compras {
+  id               String          @db.Uuid @default(dbgenerated("gen_random_uuid()")) @unique
+  listas_id        String          @db.Uuid
+  listas           listas          @relation(fields: [listas_id], references: [id])
+  catalogo_id      String          @db.Uuid
+  catalogo         catalogo        @relation(fields: [catalogo_id], references: [id])
+  nome_convidade   String          @db.Text
+  cpf              String          @db.Char(11)
+  telefone         String          @db.Text
+  valor_pago       Decimal         @db.Decimal(10,2)
+  forma_pagamento  String          @db.Text
+  status_pagamento StatusPagamento @default(Pendente)
+  is_new_gestor    Boolean         @db.Boolean @default(true)
+  is_new_noivo     Boolean         @db.Boolean @default(false)
+  data_compra      DateTime        @db.Timestamptz() @default(now())
+  created_at       DateTime        @db.Timestamptz() @default(now())
+}
+
