@@ -38,10 +38,6 @@ export class ListaItensService {
         },
       })
 
-      if (!listaItem) {
-        throw new ValidationError('Erro ao adicionar item à lista')
-      }
-
       return listaItem
     } catch (err: any) {
       throw new ValidationError('Não foi possível adicionar o item', err)

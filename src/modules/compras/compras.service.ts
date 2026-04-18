@@ -1,8 +1,4 @@
-import {
-  MissingFieldError,
-  NotFoundError,
-  ValidationError,
-} from '../../../errors/errors.js'
+import { NotFoundError, ValidationError } from '../../../errors/errors.js'
 import { prisma } from '../../../prisma/prismaClient.js'
 import type {
   CreateComprasSchemaInput,
@@ -14,20 +10,6 @@ export interface UpdateComprasSchemaDTO extends UpdateComprasSchemaInput {}
 
 export class ComprasService {
   async createCompras(data: CreateComprasSchemaDTO) {
-    if (
-      !data.catalogo_id ||
-      !data.cpf ||
-      !data.forma_pagamento ||
-      !data.is_new_gestor ||
-      !data.is_new_noivo ||
-      !data.lista_id ||
-      !data.nome_convidado ||
-      !data.status_pagamento ||
-      !data.telefone ||
-      !data.valor_pago
-    ) {
-      throw new MissingFieldError()
-    }
     const catalogo = await prisma.catalogo.findUnique({
       where: { id: data.catalogo_id },
     })

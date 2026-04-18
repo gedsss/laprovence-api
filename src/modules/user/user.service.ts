@@ -1,9 +1,5 @@
 import bcrypt from 'bcrypt'
-import {
-  MissingFieldError,
-  NotFoundError,
-  ValidationError,
-} from '../../../errors/errors.js'
+import { NotFoundError, ValidationError } from '../../../errors/errors.js'
 import { prisma } from '../../../prisma/prismaClient.js'
 import type { CreateUserInput, UpdateUserInput } from './user.schema.js'
 
@@ -18,20 +14,6 @@ interface PrismaUniqueError {
 
 export class UserService {
   async createUser(data: CreateUserInput) {
-    if (
-      !data.nome_noiva ||
-      !data.nome_noivo ||
-      !data.email ||
-      !data.data_casamento ||
-      !data.password ||
-      !data.telefone
-    ) {
-      throw new MissingFieldError()
-    }
-    if (data.password.length < 8) {
-      throw new ValidationError('Senha curta demais')
-    }
-
     try {
       const passordhash = await bcrypt.hash(data.password, 9)
 

@@ -1,8 +1,4 @@
-import {
-  MissingFieldError,
-  NotFoundError,
-  ValidationError,
-} from '../../../errors/errors.js'
+import { NotFoundError, ValidationError } from '../../../errors/errors.js'
 import { prisma } from '../../../prisma/prismaClient.js'
 import type {
   CreateCatalogoImagesInput,
@@ -17,10 +13,6 @@ export interface UpdateCatalogoImagesSchemaDTO
 
 export class CatalogoImagesService {
   async createCatalogoImages(data: CreateCatalogoImagesSchemaDTO) {
-    if (!data.posicao || !data.url) {
-      throw new MissingFieldError()
-    }
-
     const id_catalogo = data.catalogo_id
 
     const catalogoTeste = await prisma.catalogo.findUnique({

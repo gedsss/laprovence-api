@@ -78,6 +78,7 @@ model catalogo {
   catalogo_images catalogo_images[]
   lista_itens     lista_itens[]
   compras         compras[]
+  premontada_itens premontada_itens[]
 }
 
 model catalogo_images {
@@ -131,5 +132,24 @@ model compras {
   is_new_noivo     Boolean         @db.Boolean @default(false)
   data_compra      DateTime        @db.Timestamptz() @default(now())
   created_at       DateTime        @db.Timestamptz() @default(now())
+}
+
+model premontadas {
+  id                String               @db.Uuid @default(dbgenerated("gen_random_uuid()")) @unique
+  nome              String               @db.Text
+  descricao         String?              @db.Text
+  badge             String?              @db.Text
+  popular           Boolean?             @db.Boolean @default(false)
+  img               String?              @db.Text
+  premontada_itens  premontada_itens[]
+}
+
+model premontada_itens {
+  premontada_id String      @db.Uuid
+  catalogo_id   String      @db.Uuid
+  premontadas   premontadas @relation(fields: [premontada_id], references: [id], onDelete: Cascade)
+  catalogo      catalogo    @relation(fields: [catalogo_id], references: [id], onDelete: Cascade)
+
+  @@id([premontada_id, catalogo_id])
 }
 

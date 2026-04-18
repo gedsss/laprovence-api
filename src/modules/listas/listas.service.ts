@@ -1,8 +1,4 @@
-import {
-  MissingFieldError,
-  NotFoundError,
-  ValidationError,
-} from '../../../errors/errors.js'
+import { NotFoundError, ValidationError } from '../../../errors/errors.js'
 import { prisma } from '../../../prisma/prismaClient.js'
 import type { CreateListasInput, UpdateListasInput } from './listas.schema.js'
 
@@ -12,10 +8,6 @@ export interface UpdateListasSchemaDTO extends UpdateListasInput {}
 
 export class ListasService {
   async createListas(data: CreateListasSchemaDTO) {
-    if (!data.codigo || !data.nome_noivos || !data.status || !data.user_id) {
-      throw new MissingFieldError()
-    }
-
     try {
       const lista = await prisma.listas.create({
         data: {
@@ -29,10 +21,6 @@ export class ListasService {
           foto_casal: data.foto_casal,
         },
       })
-
-      if (!lista) {
-        throw new ValidationError('Erro ao criar a lista')
-      }
 
       return lista
     } catch (err: any) {

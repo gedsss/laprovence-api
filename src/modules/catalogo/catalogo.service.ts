@@ -1,8 +1,4 @@
-import {
-  MissingFieldError,
-  NotFoundError,
-  ValidationError,
-} from '../../../errors/errors.js'
+import { NotFoundError, ValidationError } from '../../../errors/errors.js'
 import { prisma } from '../../../prisma/prismaClient.js'
 import type {
   CreateCatologoInput,
@@ -15,19 +11,6 @@ export interface UpdateCatalogoSchemaDTO extends UpdateCatalogoInput {}
 
 export class CatalogoService {
   async createCatalogo(data: CreateCatalogoSchemaDTO) {
-    if (
-      !data.estoque ||
-      !data.nome ||
-      !data.peso ||
-      !data.preco ||
-      !data.quantidade ||
-      !data.setor ||
-      !data.status ||
-      !data.version
-    ) {
-      throw new MissingFieldError()
-    }
-
     try {
       const catalogo = await prisma.catalogo.create({
         data: {
