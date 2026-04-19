@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import { catalogoImagesController } from './catalogo.images.controller.js'
 
-export async function userRoutes(app: FastifyInstance) {
+export async function catalogoImagesRoutes(app: FastifyInstance) {
   app.post('/catalogo-images', async (request, reply) => {
     return catalogoImagesController.createCatalogoImages(request, reply)
   })
