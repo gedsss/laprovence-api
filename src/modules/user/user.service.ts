@@ -15,7 +15,7 @@ interface PrismaUniqueError {
 export class UserService {
   async createUser(data: CreateUserInput) {
     try {
-      const passordhash = await bcrypt.hash(data.password, 9)
+      const passordhash = await bcrypt.hash(data.password, 10)
 
       const user = await prisma.user.create({
         data: {
@@ -36,7 +36,15 @@ export class UserService {
         },
       })
 
-      return user
+      const { password, ...newUser } = user
+
+      const testeEmail = await prisma.user.findUnique(data.email)
+
+      if (testeEmail) {
+        throw new ValidationError('Email ja registrado ')
+      }
+
+      return newUser
     } catch (error) {
       const err = error as PrismaUniqueError
       if (err.code === 'P2002') {

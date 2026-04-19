@@ -52,9 +52,9 @@ export class UnauthorizedError extends AppError {
   }
 }
 
-export class InvalideCredentialsError extends UnauthorizedError {
+export class InvalidCredentialsError extends UnauthorizedError {
   constructor() {
-    super('Email ou senha incorretos')
+    super('E-mail ou senha inválidos')
     this.code = ErrorCodes.INVALID_CREDENTIALS
   }
 }
