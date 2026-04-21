@@ -2,13 +2,13 @@ import { z } from 'zod'
 
 export const CreateUserSchema = z.object({
   nome_noiva: z.string().max(50, 'O nome deve ter no máximo 50 caracteres'),
-  nome_noivo: z.string().max(50, 'O nome deve ter no máximo 50 caractreres'),
+  nome_noivo: z.string().max(50, 'O nome deve ter no máximo 50 caracteres'),
   email: z.email('O email não é válido'),
-  telefone: z.string().max(16, 'Não pe um número válido'),
+  telefone: z.string().max(16, 'Não é um número de telefone válido'),
   password: z.string().min(8, 'A senha deve ter no mínimo 8 caracteres'),
-  data_casamento: z.date(),
+  data_casamento: z.coerce.date(),
   foto_casal: z.url().optional(),
-  role: z.enum(['noivo', 'gestor']).default('noivo')
+  role: z.enum(['noivo', 'gestor']).default('noivo'),
 })
 
 export const UpdateUserSchema = z.object({
@@ -18,7 +18,7 @@ export const UpdateUserSchema = z.object({
     .min(8, 'A senha deve ter no mínimo 8 caracteres')
     .optional(),
   telefone: z.string().max(16, 'Não é um número válido').optional(),
-  data_casamento: z.date().optional(),
+  data_casamento: z.coerce.date().optional(),
   foto_casal: z.url().optional(),
 })
 

@@ -10,6 +10,14 @@ export async function listasRoutes(app: FastifyInstance) {
     return listasController.getListasByID(request, reply)
   })
 
+  app.get('/listas/codigo/:codigo', async (request, reply) => {
+    return listasController.getListasByCodigo(request, reply)
+  })
+
+  app.get('/listas/user/:user_id', async (request, reply) => {
+    return listasController.getListasByNoivo(request, reply)
+  })
+
   app.put('/listas/:id', async (request, reply) => {
     return listasController.updateListas(request, reply)
   })

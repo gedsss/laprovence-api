@@ -11,7 +11,7 @@ export const CreateCatalogoSchema = z.object({
     'Prataria',
     'Adornos',
     'Aromas',
-    'Mobiliário',
+    'Mobiliario',
     'Vasos',
     'Complementos',
   ]),
@@ -56,5 +56,16 @@ export const UpdateCatalogoSchema = z.object({
   version: z.number().default(1).optional(),
 })
 
+export const GetCatalogoQuerySchema = z.object({
+  setor: z.string().optional(),
+  status: z.string().optional(),
+  nome: z.string().optional(),
+  descricao: z.string().optional(),
+  marca: z.string().optional(),
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(100).default(10),
+})
+
+export type GetCatalogoQueryInput = z.infer<typeof GetCatalogoQuerySchema>
 export type CreateCatologoInput = z.infer<typeof CreateCatalogoSchema>
 export type UpdateCatalogoInput = z.infer<typeof UpdateCatalogoSchema>

@@ -1,18 +1,16 @@
 import type { FastifyRequest, FastifyReply } from 'fastify'
 import {
   catalogoService,
-  type CreateCatalogoSchemaDTO,
-  type UpdateCatalogoSchemaDTO,
+  type GetCatalogoFilterDTO,
 } from './catalogo.service.js'
-import { MissingFieldError } from '../../../errors/errors.js'
+import {
+  CreateCatalogoSchema,
+  UpdateCatalogoSchema,
+} from './catalogo.schema.js'
 
 export class CatalogoController {
   async createCatalogo(request: FastifyRequest, reply: FastifyReply) {
-    const data = request.body as CreateCatalogoSchemaDTO
-
-    if (!data || Object.keys(data).length === 0) {
-      throw new MissingFieldError()
-    }
+    const data = CreateCatalogoSchema.parse(request.body)
 
     const catalogo = await catalogoService.createCatalogo(data)
 
@@ -35,46 +33,22 @@ export class CatalogoController {
     })
   }
 
-  async getCatalogoByNome(request: FastifyRequest, reply: FastifyReply) {
-    const { nome } = request.params as { nome: string }
+  async getCatalogo(request: FastifyRequest, reply: FastifyReply) {
+    const filtros = request.query as GetCatalogoFilterDTO
 
-    const catalogo = await catalogoService.getCatalogoByNome(nome)
-
-    return reply.status(200).send({
-      message: 'Sucesso ao encontrar o item',
-      success: true,
-      data: catalogo,
-    })
-  }
-
-  async getCatalogoByMarca(request: FastifyRequest, reply: FastifyReply) {
-    const { marca } = request.params as { marca: string }
-
-    const catalogo = await catalogoService.getCatalogoByMarca(marca)
+    const catalogo = await catalogoService.getCatalogo(filtros)
 
     return reply.status(200).send({
-      message: 'Sucesso ao encontrar o item',
+      message: 'Sucesso ao buscar o catalogo',
       success: true,
-      data: catalogo,
-    })
-  }
-
-  async getCatalogoByDescricao(request: FastifyRequest, reply: FastifyReply) {
-    const { descricao } = request.params as { descricao: string }
-
-    const catalogo = await catalogoService.getCatalogoByDescricao(descricao)
-
-    return reply.status(200).send({
-      message: 'Sucesso ao encontrar o item',
-      success: true,
-      data: catalogo,
+      ...catalogo,
     })
   }
 
   async updateCatalogo(request: FastifyRequest, reply: FastifyReply) {
     const { id } = request.params as { id: string }
 
-    const data = request.body as UpdateCatalogoSchemaDTO
+    const data = UpdateCatalogoSchema.parse(request.body)
 
     const catalogo = await catalogoService.updateCatalogo(data, id)
 

@@ -1,18 +1,13 @@
 import type { FastifyRequest, FastifyReply } from 'fastify'
+import { catalogoImagesService } from './catalogo.images.service.js'
 import {
-  catalogoImagesService,
-  type CreateCatalogoImagesSchemaDTO,
-  type UpdateCatalogoImagesSchemaDTO,
-} from './catalogo.images.service.js'
-import { MissingFieldError } from '../../../errors/errors.js'
+  CreateCatalogoImagesSchema,
+  UpdateCatalogoImagesSchema,
+} from './catalogo.images.schema.js'
 
 export class CatalogoImagesController {
   async createCatalogoImages(request: FastifyRequest, reply: FastifyReply) {
-    const data = request.body as CreateCatalogoImagesSchemaDTO
-
-    if (!data || Object.keys(data).length === 0) {
-      throw new MissingFieldError()
-    }
+    const data = CreateCatalogoImagesSchema.parse(request.body)
 
     const image = await catalogoImagesService.createCatalogoImages(data)
 
@@ -36,7 +31,7 @@ export class CatalogoImagesController {
   }
 
   async updateCatalogoImages(request: FastifyRequest, reply: FastifyReply) {
-    const data = request.body as UpdateCatalogoImagesSchemaDTO
+    const data = UpdateCatalogoImagesSchema.parse(request.body)
 
     const { id } = request.params as { id: string }
 

@@ -7,6 +7,10 @@ export async function premontadasRoutes(app: FastifyInstance) {
   })
 
   app.get('/premontadas/:id', async (request, reply) => {
+    return premontadasController.getPremontadasByID(request, reply)
+  })
+
+  app.get('/premontadas', async (request, reply) => {
     return premontadasController.getPremontadas(request, reply)
   })
 

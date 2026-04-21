@@ -50,26 +50,22 @@ export class PremontadaItensService {
   }
 
   async getPremontadaItensById(premontada_id: string) {
-    try {
-      const premontada = await prisma.premontadas.findUnique({
-        where: { id: premontada_id },
-      })
+    const premontada = await prisma.premontadas.findUnique({
+      where: { id: premontada_id },
+    })
 
-      if (!premontada) {
-        throw new NotFoundError('Premontada não encontrada')
-      }
-
-      const itens = await prisma.premontada_itens.findMany({
-        where: { premontada_id },
-        include: {
-          catalogo: true,
-        },
-      })
-
-      return itens
-    } catch (err: any) {
-      throw new ValidationError('Não foi possível buscar os itens', err)
+    if (!premontada) {
+      throw new NotFoundError('Premontada não encontrada')
     }
+
+    const itens = await prisma.premontada_itens.findMany({
+      where: { premontada_id },
+      include: {
+        catalogo: true,
+      },
+    })
+
+    return itens
   }
 
   async removePremontadaItem(premontada_id: string, catalogo_id: string) {

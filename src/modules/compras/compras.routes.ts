@@ -14,6 +14,10 @@ export async function comprasRoutes(app: FastifyInstance) {
     return comprasController.getComprasByCpf(request, reply)
   })
 
+  app.get('/compras/cpf/:lista', async (request, reply) => {
+    return comprasController.getComprasByLista(request, reply)
+  })
+
   app.put('/compras/:id', async (request, reply) => {
     return comprasController.updateCompras(request, reply)
   })

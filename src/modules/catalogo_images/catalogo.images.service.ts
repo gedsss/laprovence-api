@@ -13,10 +13,10 @@ export interface UpdateCatalogoImagesSchemaDTO
 
 export class CatalogoImagesService {
   async createCatalogoImages(data: CreateCatalogoImagesSchemaDTO) {
-    const id_catalogo = data.catalogo_id
+    const idCatalogo = data.catalogo_id
 
     const catalogoTeste = await prisma.catalogo.findUnique({
-      where: { id_catalogo },
+      where: { idCatalogo },
     })
 
     if (!catalogoTeste) {
@@ -55,6 +55,10 @@ export class CatalogoImagesService {
 
   async updateCatalogoImages(id: string, data: UpdateCatalogoImagesSchemaDTO) {
     try {
+      if (!(await prisma.catalogo_images.findUnique({ where: { id } }))) {
+        throw new NotFoundError('Erro ao encontrar a imagem para atualizar')
+      }
+
       const imagem = await prisma.catalogo_images.update({
         where: { id },
         data: {
@@ -62,10 +66,6 @@ export class CatalogoImagesService {
           posicao: data.posicao,
         },
       })
-
-      if (!(await prisma.catalogo_images.findUnique({ where: { id } }))) {
-        throw new NotFoundError('Erro ao encontrar a imagem para atualizar')
-      }
 
       return imagem
     } catch (err: any) {

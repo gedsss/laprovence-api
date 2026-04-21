@@ -1,17 +1,10 @@
 import type { FastifyRequest, FastifyReply } from 'fastify'
-import {
-  premontadaItensService,
-  type CreatePremontadaItensSchemaDTO,
-} from './premontada_itens.service.js'
-import { MissingFieldError } from '../../../errors/errors.js'
+import { premontadaItensService } from './premontada_itens.service.js'
+import { CreatePremontadaItensSchema } from './premontada_itens.schema.js'
 
 export class PremontadaItensController {
   async addPremontadaItem(request: FastifyRequest, reply: FastifyReply) {
-    const data = request.body as CreatePremontadaItensSchemaDTO
-
-    if (!data || Object.keys(data).length === 0) {
-      throw new MissingFieldError()
-    }
+    const data = CreatePremontadaItensSchema.parse(request.body)
 
     const premontadaItem = await premontadaItensService.addPremontadaItem(data)
 

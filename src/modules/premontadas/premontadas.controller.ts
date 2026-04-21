@@ -1,18 +1,13 @@
 import type { FastifyRequest, FastifyReply } from 'fastify'
+import { premontadaService } from './premontadas.service.js'
 import {
-  premontadaService,
-  type CreatePremontadasSchemaDTO,
-  type UpdatePremontadasSchemaDTO,
-} from './premontadas.service.js'
-import { MissingFieldError } from '../../../errors/errors.js'
+  CreatePremontadasSchema,
+  UpdatePremontadasSchema,
+} from './premontadas.schema.js'
 
 export class PremontadasController {
   async createPremontadas(request: FastifyRequest, reply: FastifyReply) {
-    const data = request.body as CreatePremontadasSchemaDTO
-
-    if (!data || Object.keys(data).length === 0) {
-      throw new MissingFieldError()
-    }
+    const data = CreatePremontadasSchema.parse(request.body)
 
     const premontadas = await premontadaService.createPremontadas(data)
 
@@ -23,7 +18,7 @@ export class PremontadasController {
     })
   }
 
-  async getPremontadas(request: FastifyRequest, reply: FastifyReply) {
+  async getPremontadasByID(request: FastifyRequest, reply: FastifyReply) {
     const { id } = request.params as { id: string }
 
     const premontadas = await premontadaService.getPremontadasByID(id)
@@ -35,9 +30,19 @@ export class PremontadasController {
     })
   }
 
+  async getPremontadas(request: FastifyRequest, reply: FastifyReply) {
+    const premontadas = await premontadaService.getPremontadas()
+
+    return reply.status(200).send({
+      success: true,
+      message: 'Sucesso ao buscar as listas premontadas',
+      data: premontadas,
+    })
+  }
+
   async updatePremontadas(request: FastifyRequest, reply: FastifyReply) {
     const { id } = request.params as { id: string }
-    const data = request.body as UpdatePremontadasSchemaDTO
+    const data = UpdatePremontadasSchema.parse(request.body)
 
     const premontadas = await premontadaService.updatePremontadas(data, id)
 

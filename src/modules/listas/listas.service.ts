@@ -29,19 +29,35 @@ export class ListasService {
   }
 
   async getListasByID(id: string) {
-    try {
-      const lista = await prisma.listas.findUnique({
-        where: { id },
-      })
+    const lista = await prisma.listas.findUnique({
+      where: { id },
+    })
 
-      if (!lista) {
-        throw new NotFoundError('Erro ao encontrar a lista')
-      }
-
-      return lista
-    } catch (err: any) {
-      throw new ValidationError('Não foi possível encontrar a lista', err)
+    if (!lista) {
+      throw new NotFoundError('Erro ao encontrar a lista')
     }
+
+    return lista
+  }
+
+  async getListaByCodigo(codigo: string) {
+    const lista = await prisma.listas.findUnique({
+      where: { codigo },
+    })
+
+    if (!lista) throw new NotFoundError('Erro ao encontrar a lista')
+
+    return lista
+  }
+
+  async getListaByNoivo(user_id: string) {
+    const lista = await prisma.listas.findUnique({
+      where: { user_id },
+    })
+
+    if (!lista) throw new NotFoundError('Erro ao encontrar a lista')
+
+    return lista
   }
 
   async updateListasById(id: string, data: UpdateListasSchemaDTO) {

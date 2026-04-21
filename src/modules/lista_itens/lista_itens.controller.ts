@@ -1,17 +1,10 @@
 import type { FastifyRequest, FastifyReply } from 'fastify'
-import {
-  listaItensService,
-  type CreateListaItensSchemaDTO,
-} from './lista_itens.service.js'
-import { MissingFieldError } from '../../../errors/errors.js'
+import { listaItensService } from './lista_itens.service.js'
+import { CreateListaItensSchema } from './lista_itens.schema.js'
 
 export class ListaItensController {
   async createListaItem(request: FastifyRequest, reply: FastifyReply) {
-    const data = request.body as CreateListaItensSchemaDTO
-
-    if (!data || Object.keys(data).length === 0) {
-      throw new MissingFieldError()
-    }
+    const data = CreateListaItensSchema.parse(request.body)
 
     const listaItem = await listaItensService.createListaItem(data)
 

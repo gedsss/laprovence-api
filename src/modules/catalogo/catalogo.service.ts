@@ -2,12 +2,15 @@ import { NotFoundError, ValidationError } from '../../../errors/errors.js'
 import { prisma } from '../../../prisma/prismaClient.js'
 import type {
   CreateCatologoInput,
+  GetCatalogoQueryInput,
   UpdateCatalogoInput,
-} from './catologo.schema.js'
+} from './catalogo.schema.js'
 
 export interface CreateCatalogoSchemaDTO extends CreateCatologoInput {}
 
 export interface UpdateCatalogoSchemaDTO extends UpdateCatalogoInput {}
+
+export interface GetCatalogoFilterDTO extends GetCatalogoQueryInput {}
 
 export class CatalogoService {
   async createCatalogo(data: CreateCatalogoSchemaDTO) {
@@ -55,6 +58,10 @@ export class CatalogoService {
       where: { nome },
     })
 
+    if (!catalogo) {
+      throw new NotFoundError('Erro o encontrar o catalogo')
+    }
+
     return catalogo
   }
 
@@ -62,6 +69,10 @@ export class CatalogoService {
     const catalogo = await prisma.catalogo.findMany({
       where: { marca },
     })
+
+    if (!catalogo) {
+      throw new NotFoundError('Erro o encontrar o catalogo')
+    }
 
     return catalogo
   }
@@ -71,7 +82,60 @@ export class CatalogoService {
       where: { descricao },
     })
 
+    if (!catalogo) {
+      throw new NotFoundError('Erro o encontrar o catalogo')
+    }
+
     return catalogo
+  }
+
+  async getCatalogo(filtros: GetCatalogoFilterDTO) {
+    const page = filtros.page ?? 1
+    const limit = filtros.limit ?? 10
+
+    const skip = (page - 1) * limit
+
+    const where = {
+      ...(filtros.setor && { setor: filtros.setor }),
+      ...(filtros.status && { status: filtros.status }),
+      ...(filtros.nome && {
+        nome: {
+          contains: filtros.nome,
+          mode: 'insensitive' as const,
+        },
+      }),
+      ...(filtros.marca && {
+        marca: {
+          contains: filtros.marca,
+          mode: 'insensitive' as const,
+        },
+      }),
+      ...(filtros.descricao && {
+        descricao: {
+          contains: filtros.descricao,
+          mode: 'insensitive' as const,
+        },
+      }),
+    }
+
+    const [catalogo, total] = await Promise.all([
+      prisma.catalogo.findMany({
+        where,
+        skip,
+        take: limit,
+      }),
+      prisma.catalogo.count({ where }),
+    ])
+
+    return {
+      data: catalogo,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    }
   }
 
   async updateCatalogo(data: UpdateCatalogoSchemaDTO, id: string) {

@@ -12,7 +12,7 @@ export const CatalogoImagesParamsSchema = z.object({
 
 export const UpdateCatalogoImagesSchema = z.object({
   url: z.url('A url deve ser válida').optional(),
-  posicao: z.number().optional,
+  posicao: z.number().optional(),
 })
 
 export type CreateCatalogoImagesInput = z.infer<

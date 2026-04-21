@@ -45,26 +45,22 @@ export class ListaItensService {
   }
 
   async getListaItensById(listas_id: string) {
-    try {
-      const lista = await prisma.listas.findUnique({
-        where: { id: listas_id },
-      })
+    const lista = await prisma.listas.findUnique({
+      where: { id: listas_id },
+    })
 
-      if (!lista) {
-        throw new NotFoundError('Lista não encontrada')
-      }
-
-      const itens = await prisma.lista_itens.findMany({
-        where: { listas_id },
-        include: {
-          catalogo: true,
-        },
-      })
-
-      return itens
-    } catch (err: any) {
-      throw new ValidationError('Não foi possível buscar os itens', err)
+    if (!lista) {
+      throw new NotFoundError('Lista não encontrada')
     }
+
+    const itens = await prisma.lista_itens.findMany({
+      where: { listas_id },
+      include: {
+        catalogo: true,
+      },
+    })
+
+    return itens
   }
 
   async deleteListaItem(id: string) {

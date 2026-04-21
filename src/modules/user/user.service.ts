@@ -15,14 +15,14 @@ interface PrismaUniqueError {
 export class UserService {
   async createUser(data: CreateUserInput) {
     try {
-      const passordhash = await bcrypt.hash(data.password, 10)
+      const passwordHash = await bcrypt.hash(data.password, 10)
 
       const user = await prisma.user.create({
         data: {
           nome_noiva: data.nome_noiva,
           nome_noivo: data.nome_noivo,
           email: data.email,
-          senha: passordhash,
+          senha: passwordHash,
           data_casamento: data.data_casamento,
           telefone: data.telefone,
         },

@@ -29,22 +29,21 @@ export class PremontadasService {
   }
 
   async getPremontadasByID(id: string) {
-    try {
-      const premontadas = await prisma.premontadas.findUnique({
-        where: { id },
-      })
+    const premontadas = await prisma.premontadas.findUnique({
+      where: { id },
+    })
 
-      if (!premontadas) {
-        throw new NotFoundError('Erro ao encontrar a lista premontada')
-      }
-
-      return premontadas
-    } catch (err: any) {
-      throw new ValidationError(
-        'Não foi possível encontrar a lista premontada',
-        err
-      )
+    if (!premontadas) {
+      throw new NotFoundError('Erro ao encontrar a lista premontada')
     }
+
+    return premontadas
+  }
+
+  async getPremontadas() {
+    const premontadas = await prisma.premontadas.findMany()
+
+    return premontadas
   }
 
   async updatePremontadas(data: UpdatePremontadasInput, id: string) {

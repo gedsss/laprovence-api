@@ -1,18 +1,10 @@
 import type { FastifyRequest, FastifyReply } from 'fastify'
-import {
-  listasService,
-  type CreateListasSchemaDTO,
-  type UpdateListasSchemaDTO,
-} from './listas.service.js'
-import { MissingFieldError } from '../../../errors/errors.js'
+import { listasService } from './listas.service.js'
+import { CreateListasSchema, UpdateListasSchema } from './listas.schema.js'
 
 export class ListasController {
   async createListas(request: FastifyRequest, reply: FastifyReply) {
-    const data = request.body as CreateListasSchemaDTO
-
-    if (!data || Object.keys(data).length === 0) {
-      throw new MissingFieldError()
-    }
+    const data = CreateListasSchema.parse(request.body)
 
     const lista = await listasService.createListas(data)
 
@@ -35,9 +27,33 @@ export class ListasController {
     })
   }
 
+  async getListasByCodigo(request: FastifyRequest, reply: FastifyReply) {
+    const { codigo } = request.params as { codigo: string }
+
+    const lista = await listasService.getListasByID(codigo)
+
+    return reply.status(200).send({
+      message: 'Sucesso ao encontrar a lista',
+      success: true,
+      data: lista,
+    })
+  }
+
+  async getListasByNoivo(request: FastifyRequest, reply: FastifyReply) {
+    const { user_id } = request.params as { user_id: string }
+
+    const lista = await listasService.getListasByID(user_id)
+
+    return reply.status(200).send({
+      message: 'Sucesso ao encontrar a lista',
+      success: true,
+      data: lista,
+    })
+  }
+
   async updateListas(request: FastifyRequest, reply: FastifyReply) {
     const { id } = request.params as { id: string }
-    const data = request.body as UpdateListasSchemaDTO
+    const data = UpdateListasSchema.parse(request.body)
 
     const lista = await listasService.updateListasById(id, data)
 

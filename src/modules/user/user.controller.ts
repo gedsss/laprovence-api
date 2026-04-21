@@ -1,18 +1,10 @@
 import type { FastifyReply, FastifyRequest } from 'fastify'
-import { MissingFieldError } from '../../../errors/errors.js'
-import {
-  type CreateUserSchemaDTO,
-  type UpdateUserSchemaDTO,
-  userService,
-} from './user.service.js'
+import { userService } from './user.service.js'
+import { CreateUserSchema, UpdateUserSchema } from './user.schema.js'
 
 export class UserController {
   async createUser(request: FastifyRequest, reply: FastifyReply) {
-    const data = request.body as CreateUserSchemaDTO
-
-    if (!data || Object.keys(data).length === 0) {
-      throw new MissingFieldError()
-    }
+    const data = CreateUserSchema.parse(request.body)
 
     const user = await userService.createUser(data)
 
@@ -36,7 +28,7 @@ export class UserController {
   }
 
   async updateUser(request: FastifyRequest, reply: FastifyReply) {
-    const data = request.body as UpdateUserSchemaDTO
+    const data = UpdateUserSchema.parse(request.body)
     const { id } = request.params as { id: string }
 
     const user = await userService.updateUser(data, id)

@@ -17,7 +17,7 @@ export class ComprasService {
     if (!catalogo) throw new ValidationError('ID de catálogo inválida')
 
     const lista = await prisma.listas.findUnique({
-      where: { id: data.lista_id },
+      where: { id: data.listas_id },
     })
 
     if (!lista) throw new ValidationError('ID de lista inválido')
@@ -25,7 +25,7 @@ export class ComprasService {
     try {
       const compras = await prisma.compras.create({
         data: {
-          lista_id: data.lista_id,
+          lista_id: data.listas_id,
           catalogo_id: data.catalogo_id,
           nome_convidade: data.nome_convidado,
           cpf: data.cpf,
@@ -44,35 +44,39 @@ export class ComprasService {
   }
 
   async getComprasByID(id: string) {
-    try {
-      const compras = await prisma.compras.findUnique({
-        where: { id },
-      })
+    const compras = await prisma.compras.findUnique({
+      where: { id },
+    })
 
-      if (!compras) {
-        throw new NotFoundError('Não foi possivel encontrar a compra')
-      }
-
-      return compras
-    } catch (err: any) {
-      throw new ValidationError('Erro ao encontrar a compra', err)
+    if (!compras) {
+      throw new NotFoundError('Não foi possivel encontrar a compra')
     }
+
+    return compras
   }
 
   async getComprasByCpf(cpf: string) {
-    try {
-      const compras = await prisma.compras.findMany({
-        where: { cpf },
-      })
+    const compras = await prisma.compras.findMany({
+      where: { cpf },
+    })
 
-      if (!compras || compras.length === 0) {
-        throw new NotFoundError('Nenhuma compra encontrada com este CPF')
-      }
-
-      return compras
-    } catch (err: any) {
-      throw new ValidationError('Erro ao encontrar a compra', err)
+    if (!compras || compras.length === 0) {
+      throw new NotFoundError('Nenhuma compra encontrada com este CPF')
     }
+
+    return compras
+  }
+
+  async getComprasByLista(lista: string) {
+    const compras = await prisma.compras.findMany({
+      where: { lista },
+    })
+
+    if (!compras || compras.length === 0) {
+      throw new NotFoundError('Nenhuma compra encontrada com este CPF')
+    }
+
+    return compras
   }
 
   async updateCompras(data: UpdateComprasSchemaDTO, id: string) {

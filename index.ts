@@ -11,6 +11,7 @@ import { loginRoutes } from './src/modules/login/login.routes.js'
 import { AppError } from './errors/appError.js'
 import helmet from '@fastify/helmet'
 import cors from '@fastify/cors'
+import rateLimit from '@fastify/rate-limit'
 
 const fastify = Fastify({
   logger: true,
@@ -20,13 +21,6 @@ const fastify = Fastify({
 fastify.get('/', (request, reply) => {
   return reply.send({ status: 'ok', message: 'Servidor funcionando' })
 })
-
-fastify.register(cors, {
-  origin: true,
-  credentials: true,
-})
-
-fastify.register(helmet)
 
 // Registrar rotas
 fastify.register(userRoutes)
@@ -38,6 +32,34 @@ fastify.register(comprasRoutes)
 fastify.register(premontadasRoutes)
 fastify.register(premontadaItensRoutes)
 fastify.register(loginRoutes)
+
+fastify.register(rateLimit, {
+  global: true,
+  max: 100,
+  timeWindow: '1 minute',
+})
+
+fastify.post(
+  '/login',
+  {
+    config: {
+      rateLimit: {
+        max: 5,
+        timeWindow: '1 minute',
+      },
+    },
+  },
+  async (request, reply) => {
+    return { ok: true }
+  }
+)
+
+fastify.register(cors, {
+  origin: true,
+  credentials: true,
+})
+
+fastify.register(helmet)
 
 // Handler de erro global
 fastify.setErrorHandler((error, request, reply) => {

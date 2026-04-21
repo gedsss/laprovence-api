@@ -1,9 +1,10 @@
 import type { FastifyRequest, FastifyReply } from 'fastify'
-import { loginService, type CreateLoginSchemaDTO } from './login.service.js'
+import { loginService } from './login.service.js'
+import { CreateLoginSchema } from './login.schema.js'
 
 export class LoginController {
   async login(request: FastifyRequest, reply: FastifyReply) {
-    const { email, password } = request.body as CreateLoginSchemaDTO
+    const { email, password } = CreateLoginSchema.parse(request.body)
 
     const login = await loginService.Login(email, password)
 

@@ -185,7 +185,7 @@ export class BusinessRuleError extends AppError {
   }
 }
 
-export class InvalideStateError extends BusinessRuleError {
+export class InvalidStateError extends BusinessRuleError {
   constructor(resource: string, currentState: string, expectedState: string) {
     super(
       `${resource} está no estado "${currentState}", mas esperava-se "${expectedState}"`,
