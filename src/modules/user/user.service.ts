@@ -116,6 +116,40 @@ export class UserService {
     }
   }
 
+  async changePassword(id: string, password: string) {
+    const existingUser = await prisma.user.findUnique({
+      where: { id },
+    })
+
+    if (!existingUser) {
+      throw new NotFoundError('Usuario não encontrado para redefinir a senha')
+    }
+
+    const passwordDuplicate = await bcrypt.compare(
+      password,
+      existingUser.password
+    )
+
+    if (passwordDuplicate) {
+      throw new ValidationError('A senha não pode ser a mesma que a atual')
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10)
+
+    try {
+      const user = await prisma.user.update({
+        where: { id },
+        data: {
+          password: passwordHash,
+        },
+      })
+
+      return user
+    } catch (err: any) {
+      throw new ValidationError('Erro ao redefinir a senha', err)
+    }
+  }
+
   async deleteUser(id: string) {
     const existingUser = await prisma.user.findUnique({
       where: { id },

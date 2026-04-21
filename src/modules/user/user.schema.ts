@@ -26,5 +26,9 @@ export const UserParamsSchema = z.object({
   id: z.uuid('ID não é um uuid válido'),
 })
 
+export const ChangePasswordSchema = z.object({
+  password: z.string().min(8, 'A senha deve ter no minínmo 8 caracteres'),
+})
+
 export type CreateUserInput = z.infer<typeof CreateUserSchema>
 export type UpdateUserInput = z.infer<typeof UpdateUserSchema>

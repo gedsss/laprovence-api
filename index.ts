@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/style/noNonNullAssertion: <> */
 import Fastify from 'fastify'
 import { userRoutes } from './src/modules/user/user.routes.js'
 import { catalogoRoutes } from './src/modules/catalogo/catalogo.routes.js'
@@ -12,13 +13,21 @@ import { AppError } from './errors/appError.js'
 import helmet from '@fastify/helmet'
 import cors from '@fastify/cors'
 import rateLimit from '@fastify/rate-limit'
+import jwt from '@fastify/jwt'
+import authPlugin from './src/plugins/auth.js'
 
 const fastify = Fastify({
   logger: true,
 })
 
+fastify.register(jwt, {
+  secret: process.env.JWT_PASS!,
+})
+
+fastify.register(authPlugin)
+
 // Rota raiz
-fastify.get('/', (request, reply) => {
+fastify.get('/', (_request, reply) => {
   return reply.send({ status: 'ok', message: 'Servidor funcionando' })
 })
 
@@ -49,7 +58,7 @@ fastify.post(
       },
     },
   },
-  async (request, reply) => {
+  async (_request, _reply) => {
     return { ok: true }
   }
 )
@@ -62,7 +71,7 @@ fastify.register(cors, {
 fastify.register(helmet)
 
 // Handler de erro global
-fastify.setErrorHandler((error, request, reply) => {
+fastify.setErrorHandler((error, _request, reply) => {
   if (error instanceof AppError) {
     return reply.status(error.statusCode).send({
       success: false,

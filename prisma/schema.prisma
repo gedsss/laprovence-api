@@ -93,7 +93,7 @@ model catalogo_images {
 model listas {
   id                      String           @db.Uuid @default(dbgenerated("gen_random_uuid()")) @id
   codigo                  String           @db.Char(6) @unique
-  user_id                 String           @db.Uuid @unique
+  user_id                 String           @db.Uuid
   user                    user             @relation(fields: [user_id], references: [id])
   nome_noivos             String           @db.Text
   telefone                String?          @db.Text
@@ -145,8 +145,8 @@ model premontadas {
 }
 
 model premontada_itens {
-  premontada_id String      @db.Uuid @unique
-  catalogo_id   String      @db.Uuid @unique
+  premontada_id String      @db.Uuid 
+  catalogo_id   String      @db.Uuid 
   premontadas   premontadas @relation(fields: [premontada_id], references: [id], onDelete: Cascade)
   catalogo      catalogo    @relation(fields: [catalogo_id], references: [id], onDelete: Cascade)
 

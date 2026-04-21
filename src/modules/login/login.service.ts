@@ -18,9 +18,13 @@ export class LoginService {
 
     if (!senhaCorreta) throw new InvalidCredentialsError()
 
-    const token = jwt.sign({ id: user.id }, process.env.JWT_PASS ?? '', {
-      expiresIn: '8h',
-    })
+    const token = jwt.sign(
+      { sub: user.id, email: user.email },
+      process.env.JWT_PASS ?? '',
+      {
+        expiresIn: '8h',
+      }
+    )
 
     const { password: _, ...userLogin } = user
 
