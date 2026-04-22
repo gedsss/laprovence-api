@@ -18,9 +18,9 @@ export class CatalogoService {
       const catalogo = await prisma.catalogo.create({
         data: {
           nome: data.nome,
-          marca: data.marca,
-          tamanho: data.tamanho,
-          descricao: data.descricao,
+          marca: data.marca ?? null,
+          tamanho: data.tamanho ?? null,
+          descricao: data.descricao ?? null,
           preco: data.preco,
           setor: data.setor,
           estoque: data.estoque,
@@ -151,17 +151,17 @@ export class CatalogoService {
       const item = await prisma.catalogo.update({
         where: { id },
         data: {
-          nome: data.nome,
-          marca: data.marca,
-          tamanho: data.tamanho,
-          descricao: data.descricao,
-          preco: data.preco,
-          setor: data.setor,
-          estoque: data.estoque,
-          quantidade: data.quantidade,
-          peso: data.peso,
-          status: data.status,
-          version: data.version,
+          ...(data.nome !== undefined && { nome: data.nome }),
+          ...(data.marca !== undefined && { marca: data.marca }),
+          ...(data.tamanho !== undefined && { tamanho: data.tamanho }),
+          ...(data.descricao !== undefined && { descricao: data.descricao }),
+          ...(data.preco !== undefined && { preco: data.preco }),
+          ...(data.setor !== undefined && { setor: data.setor }),
+          ...(data.estoque !== undefined && { estoque: data.estoque }),
+          ...(data.quantidade !== undefined && { quantidade: data.quantidade }),
+          ...(data.peso !== undefined && { peso: data.peso }),
+          ...(data.status !== undefined && { status: data.status }),
+          ...(data.version !== undefined && { version: data.version }),
         },
       })
 

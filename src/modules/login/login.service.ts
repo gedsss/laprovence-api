@@ -26,7 +26,7 @@ export class LoginService {
       }
     )
 
-    const { password: _, ...userLogin } = user
+    const { senha: _, ...userLogin } = user
 
     return {
       user: userLogin,

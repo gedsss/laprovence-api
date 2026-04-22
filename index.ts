@@ -1,5 +1,6 @@
 /** biome-ignore-all lint/style/noNonNullAssertion: <> */
 import Fastify from 'fastify'
+import 'dotenv/config'
 import { userRoutes } from './src/modules/user/user.routes.js'
 import { catalogoRoutes } from './src/modules/catalogo/catalogo.routes.js'
 import { catalogoImagesRoutes } from './src/modules/catalogo_images/catalogo.images.routes.js'
@@ -47,21 +48,6 @@ fastify.register(rateLimit, {
   max: 100,
   timeWindow: '1 minute',
 })
-
-fastify.post(
-  '/login',
-  {
-    config: {
-      rateLimit: {
-        max: 5,
-        timeWindow: '1 minute',
-      },
-    },
-  },
-  async (_request, _reply) => {
-    return { ok: true }
-  }
-)
 
 fastify.register(cors, {
   origin: true,

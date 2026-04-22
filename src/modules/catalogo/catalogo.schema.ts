@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { Setor, StatusCatalogo } from '../../../generated/prisma/enums'
 
 export const CreateCatalogoSchema = z.object({
   nome: z.string(),
@@ -41,7 +42,7 @@ export const UpdateCatalogoSchema = z.object({
       'Prataria',
       'Adornos',
       'Aromas',
-      'Mobiliário',
+      'Mobiliario',
       'Vasos',
       'Complementos',
     ])
@@ -57,8 +58,8 @@ export const UpdateCatalogoSchema = z.object({
 })
 
 export const GetCatalogoQuerySchema = z.object({
-  setor: z.string().optional(),
-  status: z.string().optional(),
+  setor: z.nativeEnum(Setor).optional(),
+  status: z.nativeEnum(StatusCatalogo).optional(),
   nome: z.string().optional(),
   descricao: z.string().optional(),
   marca: z.string().optional(),

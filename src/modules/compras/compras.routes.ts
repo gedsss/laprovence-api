@@ -26,7 +26,7 @@ export async function comprasRoutes(app: FastifyInstance) {
     }
   )
 
-  app.get('/compras/cpf/:lista', async (request, reply) => {
+  app.get('/compras/lista/:lista', async (request, reply) => {
     return comprasController.getComprasByLista(request, reply)
   })
 

@@ -36,15 +36,7 @@ export class UserService {
         },
       })
 
-      const { password, ...newUser } = user
-
-      const testeEmail = await prisma.user.findUnique(data.email)
-
-      if (testeEmail) {
-        throw new ValidationError('Email ja registrado ')
-      }
-
-      return newUser
+      return user
     } catch (error) {
       const err = error as PrismaUniqueError
       if (err.code === 'P2002') {
@@ -79,22 +71,21 @@ export class UserService {
 
   async updateUser(data: UpdateUserSchemaDTO, id: string) {
     try {
-      const updateData: Partial<Omit<UpdateUserSchemaDTO, 'password'>> & {
-        senha?: string
-      } = {}
-
-      if (data.data_casamento) updateData.data_casamento = data.data_casamento
-      if (data.email) updateData.email = data.email
-      if (data.foto_casal) updateData.foto_casal = data.foto_casal
-      if (data.telefone) updateData.telefone = data.telefone
-
-      if (data.password) {
-        updateData.senha = await bcrypt.hash(data.password, 9)
-      }
+      const senhaHash = data.password
+        ? await bcrypt.hash(data.password, 10)
+        : undefined
 
       const user = await prisma.user.update({
         where: { id },
-        data: updateData,
+        data: {
+          ...(data.email !== undefined && { email: data.email }),
+          ...(data.telefone !== undefined && { telefone: data.telefone }),
+          ...(data.data_casamento !== undefined && {
+            data_casamento: data.data_casamento,
+          }),
+          ...(data.foto_casal !== undefined && { foto_casal: data.foto_casal }),
+          ...(senhaHash !== undefined && { senha: senhaHash }),
+        },
         select: {
           email: true,
           data_casamento: true,
@@ -125,10 +116,7 @@ export class UserService {
       throw new NotFoundError('Usuario não encontrado para redefinir a senha')
     }
 
-    const passwordDuplicate = await bcrypt.compare(
-      password,
-      existingUser.password
-    )
+    const passwordDuplicate = await bcrypt.compare(password, existingUser.senha)
 
     if (passwordDuplicate) {
       throw new ValidationError('A senha não pode ser a mesma que a atual')
@@ -140,7 +128,7 @@ export class UserService {
       const user = await prisma.user.update({
         where: { id },
         data: {
-          password: passwordHash,
+          senha: passwordHash,
         },
       })
 

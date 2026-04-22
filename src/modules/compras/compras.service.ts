@@ -25,9 +25,9 @@ export class ComprasService {
     try {
       const compras = await prisma.compras.create({
         data: {
-          lista_id: data.listas_id,
+          listas_id: data.listas_id,
           catalogo_id: data.catalogo_id,
-          nome_convidade: data.nome_convidado,
+          nome_convidado: data.nome_convidado,
           cpf: data.cpf,
           telefone: data.telefone,
           valor_pago: data.valor_pago,
@@ -67,9 +67,9 @@ export class ComprasService {
     return compras
   }
 
-  async getComprasByLista(lista: string) {
+  async getComprasByLista(listas_id: string) {
     const compras = await prisma.compras.findMany({
-      where: { lista },
+      where: { listas_id },
     })
 
     if (!compras || compras.length === 0) {
@@ -84,14 +84,24 @@ export class ComprasService {
       const compras = await prisma.compras.update({
         where: { id },
         data: {
-          nome_convidade: data.nome_convidado,
-          cpf: data.cpf,
-          telefone: data.telefone,
-          valor_pago: data.valor_pago,
-          forma_pagamento: data.forma_pagamento,
-          status_pagamento: data.status_pagamento,
-          is_new_gestor: data.is_new_gestor,
-          is_new_noivo: data.is_new_noivo,
+          ...(data.nome_convidado !== undefined && {
+            nome_convidado: data.nome_convidado,
+          }),
+          ...(data.cpf !== undefined && { cpf: data.cpf }),
+          ...(data.telefone !== undefined && { telefone: data.telefone }),
+          ...(data.valor_pago !== undefined && { valor_pago: data.valor_pago }),
+          ...(data.forma_pagamento !== undefined && {
+            forma_pagamento: data.forma_pagamento,
+          }),
+          ...(data.status_pagamento !== undefined && {
+            status_pagamento: data.status_pagamento,
+          }),
+          ...(data.is_new_gestor !== undefined && {
+            is_new_gestor: data.is_new_gestor,
+          }),
+          ...(data.is_new_noivo !== undefined && {
+            is_new_noivo: data.is_new_noivo,
+          }),
         },
       })
 

@@ -40,9 +40,9 @@ export class ComprasController {
   }
 
   async getComprasByLista(request: FastifyRequest, reply: FastifyReply) {
-    const { cpf } = request.params as { cpf: string }
+    const { lista } = request.params as { lista: string }
 
-    const compras = await comprasService.getComprasByLista(cpf)
+    const compras = await comprasService.getComprasByLista(lista)
 
     return reply.status(200).send({
       success: true,

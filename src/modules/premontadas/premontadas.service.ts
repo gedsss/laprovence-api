@@ -15,10 +15,10 @@ export class PremontadasService {
       const premontadas = await prisma.premontadas.create({
         data: {
           nome: data.nome,
-          descricao: data.descricao,
-          badge: data.badge,
-          popular: data.popular,
-          img: data.img,
+          descricao: data.descricao ?? null,
+          badge: data.badge ?? null,
+          popular: data.popular ?? null,
+          img: data.img ?? null,
         },
       })
 
@@ -48,17 +48,15 @@ export class PremontadasService {
 
   async updatePremontadas(data: UpdatePremontadasInput, id: string) {
     try {
-      const updateData: Partial<UpdatePremontadasInput> = {}
-
-      if (data.nome) updateData.nome = data.nome
-      if (data.descricao) updateData.descricao = data.descricao
-      if (data.badge) updateData.badge = data.badge
-      if (data.popular !== undefined) updateData.popular = data.popular
-      if (data.img) updateData.img = data.img
-
       const premontadas = await prisma.premontadas.update({
         where: { id },
-        data: updateData,
+        data: {
+          ...(data.nome !== undefined && { nome: data.nome }),
+          ...(data.descricao !== undefined && { descricao: data.descricao }),
+          ...(data.badge !== undefined && { badge: data.badge }),
+          ...(data.popular !== undefined && { popular: data.popular }),
+          ...(data.img !== undefined && { img: data.img }),
+        },
       })
       return premontadas
     } catch (err: any) {
