@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 export const CreateListasSchema = z.object({
-  codigo: z.string().max(6, 'O código não deve ter mais de 6 caracteres'),
+  codigo: z.string().max(6, 'O código não deve ter mais de 6 caracteres').optional(),
   user_id: z.uuid(),
   nome_noivos: z.string(),
   telefone: z.string().optional(),

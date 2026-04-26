@@ -22,7 +22,7 @@ export class UserService {
           nome_noiva: data.nome_noiva,
           nome_noivo: data.nome_noivo,
           email: data.email,
-          senha: passwordHash,
+          password: passwordHash,
           data_casamento: data.data_casamento,
           telefone: data.telefone,
         },
@@ -71,7 +71,7 @@ export class UserService {
 
   async updateUser(data: UpdateUserSchemaDTO, id: string) {
     try {
-      const senhaHash = data.password
+      const passwordHash = data.password
         ? await bcrypt.hash(data.password, 10)
         : undefined
 
@@ -84,7 +84,7 @@ export class UserService {
             data_casamento: data.data_casamento,
           }),
           ...(data.foto_casal !== undefined && { foto_casal: data.foto_casal }),
-          ...(senhaHash !== undefined && { senha: senhaHash }),
+          ...(passwordHash !== undefined && { password: passwordHash }),
         },
         select: {
           email: true,
@@ -104,37 +104,6 @@ export class UserService {
         }
         throw error
       }
-    }
-  }
-
-  async changePassword(id: string, password: string) {
-    const existingUser = await prisma.user.findUnique({
-      where: { id },
-    })
-
-    if (!existingUser) {
-      throw new NotFoundError('Usuario não encontrado para redefinir a senha')
-    }
-
-    const passwordDuplicate = await bcrypt.compare(password, existingUser.senha)
-
-    if (passwordDuplicate) {
-      throw new ValidationError('A senha não pode ser a mesma que a atual')
-    }
-
-    const passwordHash = await bcrypt.hash(password, 10)
-
-    try {
-      const user = await prisma.user.update({
-        where: { id },
-        data: {
-          senha: passwordHash,
-        },
-      })
-
-      return user
-    } catch (err: any) {
-      throw new ValidationError('Erro ao redefinir a senha', err)
     }
   }
 

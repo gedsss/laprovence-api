@@ -1,10 +1,6 @@
 import type { FastifyReply, FastifyRequest } from 'fastify'
 import { userService } from './user.service.js'
-import {
-  ChangePasswordSchema,
-  CreateUserSchema,
-  UpdateUserSchema,
-} from './user.schema.js'
+import { CreateUserSchema, UpdateUserSchema } from './user.schema.js'
 
 export class UserController {
   async createUser(request: FastifyRequest, reply: FastifyReply) {
@@ -41,19 +37,6 @@ export class UserController {
       success: true,
       message: 'Sucesso ao atualizar o usuário',
       data: user,
-    })
-  }
-
-  async changePassword(request: FastifyRequest, reply: FastifyReply) {
-    const userID = request.user.sub
-    const { password } = ChangePasswordSchema.parse(request.body)
-
-    const passwordChanged = await userService.changePassword(userID, password)
-
-    return reply.status(200).send({
-      success: true,
-      message: 'Sucesso ao redefinir a senha',
-      data: passwordChanged,
     })
   }
 

@@ -11,6 +11,14 @@ export async function listasRoutes(app: FastifyInstance) {
   )
 
   app.get(
+    '/listas',
+    { preHandler: [app.authenticate] },
+    async (request, reply) => {
+      return listasController.getListas(request, reply)
+    }
+  )
+
+  app.get(
     '/listas/:id',
     { preHandler: [app.authenticate] },
     async (request, reply) => {

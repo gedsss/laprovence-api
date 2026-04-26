@@ -22,14 +22,6 @@ export async function userRoutes(app: FastifyInstance) {
     }
   )
 
-  app.patch(
-    '/me/password',
-    { preHandler: [app.authenticate] },
-    async (request, reply) => {
-      return userController.changePassword(request, reply)
-    }
-  )
-
   app.delete(
     '/users/:id',
     { preHandler: [app.authenticate] },

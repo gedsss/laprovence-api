@@ -1,5 +1,7 @@
 /** biome-ignore-all lint/style/noNonNullAssertion: <> */
+import { ZodError } from 'zod'
 import Fastify from 'fastify'
+import type { FastifyError } from 'fastify'
 import 'dotenv/config'
 import { userRoutes } from './src/modules/user/user.routes.js'
 import { catalogoRoutes } from './src/modules/catalogo/catalogo.routes.js'
@@ -9,7 +11,7 @@ import { listaItensRoutes } from './src/modules/lista_itens/lista_itens.routes.j
 import { comprasRoutes } from './src/modules/compras/compras.routes.js'
 import { premontadasRoutes } from './src/modules/premontadas/premontadas.routes.js'
 import { premontadaItensRoutes } from './src/modules/premontada_itens/premontada_itens.routes.js'
-import { loginRoutes } from './src/modules/login/login.routes.js'
+import { authRoutes } from './src/auth/auth.routes.js'
 import { AppError } from './errors/appError.js'
 import helmet from '@fastify/helmet'
 import cors from '@fastify/cors'
@@ -41,7 +43,7 @@ fastify.register(listaItensRoutes)
 fastify.register(comprasRoutes)
 fastify.register(premontadasRoutes)
 fastify.register(premontadaItensRoutes)
-fastify.register(loginRoutes)
+fastify.register(authRoutes)
 
 fastify.register(rateLimit, {
   global: true,
@@ -57,13 +59,32 @@ fastify.register(cors, {
 fastify.register(helmet)
 
 // Handler de erro global
-fastify.setErrorHandler((error, _request, reply) => {
+fastify.setErrorHandler((error: FastifyError | AppError, _request, reply) => {
+  if (error instanceof ZodError) {
+    return reply.status(400).send({
+      success: false,
+      message: 'Erro de validação',
+      details: error.issues.map(issue => ({
+        path: issue.path.join('.'),
+        message: issue.message,
+      })),
+    })
+  }
+
   if (error instanceof AppError) {
     return reply.status(error.statusCode).send({
       success: false,
       code: error.code,
       message: error.message,
       details: error.details,
+    })
+  }
+
+  // Erros do próprio Fastify (ex: JSON inválido, validação)
+  if (error.statusCode && error.statusCode < 500) {
+    return reply.status(error.statusCode).send({
+      success: false,
+      message: error.message,
     })
   }
 
@@ -76,7 +97,7 @@ fastify.setErrorHandler((error, _request, reply) => {
 })
 
 // Iniciar servidor
-fastify.listen({ port: 3333, host: '0.0.0.0' }, (err, address) => {
+fastify.listen({ port: 3668, host: '0.0.0.0' }, (err, address) => {
   if (err) {
     fastify.log.error(err)
     process.exit(1)

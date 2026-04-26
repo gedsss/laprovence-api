@@ -13,10 +13,8 @@ export interface UpdateCatalogoImagesSchemaDTO
 
 export class CatalogoImagesService {
   async createCatalogoImages(data: CreateCatalogoImagesSchemaDTO) {
-    const idCatalogo = data.catalogo_id
-
     const catalogoTeste = await prisma.catalogo.findUnique({
-      where: { idCatalogo },
+      where: { id: data.catalogo_id },
     })
 
     if (!catalogoTeste) {
@@ -62,8 +60,8 @@ export class CatalogoImagesService {
       const imagem = await prisma.catalogo_images.update({
         where: { id },
         data: {
-          url: data.url,
-          posicao: data.posicao,
+          ...(data.url !== undefined && { url: data.url }),
+          ...(data.posicao !== undefined && { posicao: data.posicao }),
         },
       })
 

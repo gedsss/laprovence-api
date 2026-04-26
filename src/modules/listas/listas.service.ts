@@ -7,18 +7,27 @@ export interface CreateListasSchemaDTO extends CreateListasInput {}
 export interface UpdateListasSchemaDTO extends UpdateListasInput {}
 
 export class ListasService {
+  private generateCodigo(): string {
+    return Math.random().toString(36).substring(2, 8).toUpperCase()
+  }
+
   async createListas(data: CreateListasSchemaDTO) {
+    const codigo = data.codigo ?? this.generateCodigo()
     try {
       const lista = await prisma.listas.create({
         data: {
-          codigo: data.codigo,
+          codigo,
           nome_noivos: data.nome_noivos,
-          status: data.status,
+          status: data.status ?? 'Ativa',
           user_id: data.user_id,
-          telefone: data.telefone,
-          data_casamento: data.data_casamento,
-          mensagem_boas_vindas: data.mensagem_boas_vindas,
-          foto_casal: data.foto_casal,
+          ...(data.telefone !== undefined && { telefone: data.telefone }),
+          ...(data.data_casamento !== undefined && {
+            data_casamento: data.data_casamento,
+          }),
+          ...(data.mensagem_boas_vindas !== undefined && {
+            mensagem_boas_vindas: data.mensagem_boas_vindas,
+          }),
+          ...(data.foto_casal !== undefined && { foto_casal: data.foto_casal }),
         },
       })
 
@@ -51,11 +60,19 @@ export class ListasService {
   }
 
   async getListaByNoivo(user_id: string) {
-    const lista = await prisma.listas.findUnique({
+    const lista = await prisma.listas.findFirst({
       where: { user_id },
     })
 
     if (!lista) throw new NotFoundError('Erro ao encontrar a lista')
+
+    return lista
+  }
+
+  async getListas() {
+    const lista = await prisma.listas.findMany()
+
+    if (!lista) throw new NotFoundError('Erro ao encontrar as listas')
 
     return lista
   }
@@ -65,13 +82,19 @@ export class ListasService {
       const lista = await prisma.listas.update({
         where: { id },
         data: {
-          codigo: data.codigo,
-          nome_noivos: data.nome_noivos,
-          status: data.status,
-          telefone: data.telefone,
-          data_casamento: data.data_casamento,
-          mensagem_boas_vindas: data.mensagem_boas_vindas,
-          foto_casal: data.foto_casal,
+          ...(data.codigo !== undefined && { codigo: data.codigo }),
+          ...(data.nome_noivos !== undefined && {
+            nome_noivos: data.nome_noivos,
+          }),
+          ...(data.status !== undefined && { status: data.status }),
+          ...(data.telefone !== undefined && { telefone: data.telefone }),
+          ...(data.data_casamento !== undefined && {
+            data_casamento: data.data_casamento,
+          }),
+          ...(data.mensagem_boas_vindas !== undefined && {
+            mensagem_boas_vindas: data.mensagem_boas_vindas,
+          }),
+          ...(data.foto_casal !== undefined && { foto_casal: data.foto_casal }),
         },
       })
 

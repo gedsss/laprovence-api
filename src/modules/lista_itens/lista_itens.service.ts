@@ -56,7 +56,9 @@ export class ListaItensService {
     const itens = await prisma.lista_itens.findMany({
       where: { listas_id },
       include: {
-        catalogo: true,
+        catalogo: {
+          include: { catalogo_images: true },
+        },
       },
     })
 

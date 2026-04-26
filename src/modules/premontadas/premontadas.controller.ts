@@ -30,7 +30,7 @@ export class PremontadasController {
     })
   }
 
-  async getPremontadas(request: FastifyRequest, reply: FastifyReply) {
+  async getPremontadas(_request: FastifyRequest, reply: FastifyReply) {
     const premontadas = await premontadaService.getPremontadas()
 
     return reply.status(200).send({

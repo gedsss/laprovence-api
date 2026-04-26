@@ -1,0 +1,1 @@
+[?1049h[22;0;0t[1;14r(B[m[4l[?7h[H[2JEvery 2,0s: index.ts[1;90Hnote-gabriel: Sat Apr 25 14:34:07 2026[3;1Hsh: 1: index.ts: not found[14;127H[1;122H9[14;127H[14;1H[?1049l[23;0;0t[?1l>

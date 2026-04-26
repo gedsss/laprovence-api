@@ -44,6 +44,7 @@ export class CatalogoService {
   async getCatalogoByID(id: string) {
     const catalogo = await prisma.catalogo.findUnique({
       where: { id },
+      include: { catalogo_images: true },
     })
 
     if (!catalogo) {
@@ -123,6 +124,7 @@ export class CatalogoService {
         where,
         skip,
         take: limit,
+        include: { catalogo_images: true },
       }),
       prisma.catalogo.count({ where }),
     ])

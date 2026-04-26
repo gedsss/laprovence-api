@@ -18,7 +18,7 @@ export const CreateCatalogoSchema = z.object({
   ]),
   estoque: z.number().default(0),
   quantidade: z.number().default(1),
-  peso: z.string().regex(/^\d{1,4}(\.\d{1,2})?$/, 'Valor inválido'),
+  peso: z.string().regex(/^\d{1,4}(\.\d{1,2})?$/, 'Valor inválido').optional(),
   status: z.enum(['Ativo', 'Inativo']).default('Ativo'),
   version: z.number().default(1),
 })

@@ -45,19 +45,21 @@ enum StatusPagamento {
 }
 
 model user {
-  id               String    @db.Uuid @default(dbgenerated("gen_random_uuid()")) @id
-  nome_noiva       String    @db.VarChar(50)
-  nome_noivo       String    @db.VarChar(50) 
-  email            String    @db.VarChar(255) @unique
-  telefone         String    @db.VarChar(16) @unique
-  data_casamento   DateTime  @db.Date
-  senha            String    @db.Text
-  foto_casal       String?   @db.Text
-  role             Role      @default(noivo)
-  is_system        Boolean   @default(false)
-  created_at       DateTime  @db.Timestamptz() @default(now())
-  updated_at       DateTime  @db.Timestamptz() @default(now()) @updatedAt
-  listas           listas[]
+  id                  String    @db.Uuid @default(dbgenerated("gen_random_uuid()")) @id
+  nome_noiva          String    @db.VarChar(50)
+  nome_noivo          String    @db.VarChar(50) 
+  email               String    @db.VarChar(255) @unique
+  telefone            String    @db.VarChar(16) @unique
+  data_casamento      DateTime  @db.Date
+  password               String    @db.Text
+  reset_password_token   String?   @unique
+  reset_password_expire  DateTime?
+  foto_casal          String?   @db.Text
+  role                Role      @default(noivo)
+  is_system           Boolean   @default(false)
+  created_at          DateTime  @db.Timestamptz() @default(now())
+  updated_at          DateTime  @db.Timestamptz() @default(now()) @updatedAt
+  listas              listas[]
 }
 
 model catalogo {
@@ -83,7 +85,7 @@ model catalogo {
 
 model catalogo_images {
   id            String      @db.Uuid @default(dbgenerated("gen_random_uuid()")) @id
-  catalogo_id   String      @db.Uuid @unique
+  catalogo_id   String      @db.Uuid
   catalogo      catalogo    @relation(fields: [catalogo_id], references: [id])
   url           String      @db.Text
   posicao       Int         @db.Integer @default(0)
@@ -109,19 +111,19 @@ model listas {
 
 model lista_itens {
   id            String      @db.Uuid @default(dbgenerated("gen_random_uuid()")) @id
-  listas_id     String      @db.Uuid @unique
+  listas_id     String      @db.Uuid
   listas        listas      @relation(fields: [listas_id], references: [id])
-  catalogo_id   String      @db.Uuid @unique
+  catalogo_id   String      @db.Uuid
   catalogo      catalogo    @relation(fields: [catalogo_id], references: [id])
   added_at      DateTime    @db.Timestamptz() @default(now())
 }
 
 model compras {
   id               String          @db.Uuid @default(dbgenerated("gen_random_uuid()")) @id
-  listas_id        String          @db.Uuid @unique
+  listas_id        String          @db.Uuid
   listas           listas          @relation(fields: [listas_id], references: [id])
-  catalogo_id      String          @db.Uuid @unique
-  catalogo         catalogo        @relation(fields: [catalogo_id], references: [id])
+  catalogo_id      String?          @db.Uuid @unique
+  catalogo         catalogo?        @relation(fields: [catalogo_id], references: [id])
   nome_convidado   String          @db.Text
   cpf              String          @db.Char(11)
   telefone         String          @db.Text
