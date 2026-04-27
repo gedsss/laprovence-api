@@ -1,10 +1,13 @@
 import { NotFoundError, ValidationError } from '../../../errors/errors.js'
 import { prisma } from '../../../prisma/prismaClient.js'
+import { cacheDel, cacheGet, cacheSet } from '../../lib/cache.js'
 import type { CreateListasInput, UpdateListasInput } from './listas.schema.js'
 
 export interface CreateListasSchemaDTO extends CreateListasInput {}
 
 export interface UpdateListasSchemaDTO extends UpdateListasInput {}
+
+const TTL = 120 // 2 min
 
 export class ListasService {
   private generateCodigo(): string {
@@ -50,11 +53,17 @@ export class ListasService {
   }
 
   async getListaByCodigo(codigo: string) {
+    const key = `listas:codigo:${codigo}`
+    const cached = await cacheGet(key)
+    if (cached) return cached
+
     const lista = await prisma.listas.findUnique({
       where: { codigo },
     })
 
     if (!lista) throw new NotFoundError('Erro ao encontrar a lista')
+
+    await cacheSet(key, lista, TTL)
 
     return lista
   }
@@ -78,6 +87,8 @@ export class ListasService {
   }
 
   async updateListasById(id: string, data: UpdateListasSchemaDTO) {
+    const existing = await prisma.listas.findUnique({ where: { id } })
+
     try {
       const lista = await prisma.listas.update({
         where: { id },
@@ -98,6 +109,10 @@ export class ListasService {
         },
       })
 
+      if (existing?.codigo) {
+        await cacheDel(`listas:codigo:${existing.codigo}`)
+      }
+
       return lista
     } catch (err: any) {
       throw new ValidationError('Não foi possível atualizar a lista', err)
@@ -105,10 +120,16 @@ export class ListasService {
   }
 
   async deleteListas(id: string) {
+    const existing = await prisma.listas.findUnique({ where: { id } })
+
     try {
       await prisma.listas.delete({
         where: { id },
       })
+
+      if (existing?.codigo) {
+        await cacheDel(`listas:codigo:${existing.codigo}`)
+      }
 
       return { message: 'Sucesso ao deletar a lista' }
     } catch (err: any) {

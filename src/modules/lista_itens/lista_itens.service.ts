@@ -4,9 +4,12 @@ import {
   ValidationError,
 } from '../../../errors/errors.js'
 import { prisma } from '../../../prisma/prismaClient.js'
+import { cacheDel, cacheGet, cacheSet } from '../../lib/cache.js'
 import type { CreateListaItensInput } from './lista_itens.schema.js'
 
 export interface CreateListaItensSchemaDTO extends CreateListaItensInput {}
+
+const TTL = 120 // 2 min
 
 export class ListaItensService {
   async createListaItem(data: CreateListaItensSchemaDTO) {
@@ -38,6 +41,8 @@ export class ListaItensService {
         },
       })
 
+      await cacheDel(`lista_itens:lista:${data.listas_id}`)
+
       return listaItem
     } catch (err: any) {
       throw new ValidationError('Não foi possível adicionar o item', err)
@@ -45,6 +50,10 @@ export class ListaItensService {
   }
 
   async getListaItensById(listas_id: string) {
+    const key = `lista_itens:lista:${listas_id}`
+    const cached = await cacheGet(key)
+    if (cached) return cached
+
     const lista = await prisma.listas.findUnique({
       where: { id: listas_id },
     })
@@ -62,6 +71,8 @@ export class ListaItensService {
       },
     })
 
+    await cacheSet(key, itens, TTL)
+
     return itens
   }
 
@@ -78,6 +89,8 @@ export class ListaItensService {
       await prisma.lista_itens.delete({
         where: { id },
       })
+
+      await cacheDel(`lista_itens:lista:${listaItem.listas_id}`)
 
       return { message: 'Item removido com sucesso' }
     } catch (err: any) {

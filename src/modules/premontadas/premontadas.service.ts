@@ -1,5 +1,6 @@
 import { NotFoundError, ValidationError } from '../../../errors/errors.js'
 import { prisma } from '../../../prisma/prismaClient.js'
+import { cacheDel, cacheDelPattern, cacheGet, cacheSet } from '../../lib/cache.js'
 import type {
   CreatePremontadasInput,
   UpdatePremontadasInput,
@@ -8,6 +9,8 @@ import type {
 export interface CreatePremontadasSchemaDTO extends CreatePremontadasInput {}
 
 export interface UpdatePremontadasSchemaDTO extends UpdatePremontadasInput {}
+
+const TTL = 600 // 10 min
 
 export class PremontadasService {
   async createPremontadas(data: CreatePremontadasSchemaDTO) {
@@ -22,6 +25,8 @@ export class PremontadasService {
         },
       })
 
+      await cacheDel('premontadas:list')
+
       return premontadas
     } catch (err: any) {
       throw new ValidationError('Erro ao criar a lista premontada', err)
@@ -29,6 +34,10 @@ export class PremontadasService {
   }
 
   async getPremontadasByID(id: string) {
+    const key = `premontadas:id:${id}`
+    const cached = await cacheGet(key)
+    if (cached) return cached
+
     const premontadas = await prisma.premontadas.findUnique({
       where: { id },
     })
@@ -37,11 +46,19 @@ export class PremontadasService {
       throw new NotFoundError('Erro ao encontrar a lista premontada')
     }
 
+    await cacheSet(key, premontadas, TTL)
+
     return premontadas
   }
 
   async getPremontadas() {
+    const key = 'premontadas:list'
+    const cached = await cacheGet(key)
+    if (cached) return cached
+
     const premontadas = await prisma.premontadas.findMany()
+
+    await cacheSet(key, premontadas, TTL)
 
     return premontadas
   }
@@ -58,6 +75,12 @@ export class PremontadasService {
           ...(data.img !== undefined && { img: data.img }),
         },
       })
+
+      await Promise.all([
+        cacheDel('premontadas:list'),
+        cacheDelPattern(`premontadas:id:${id}`),
+      ])
+
       return premontadas
     } catch (err: any) {
       throw new ValidationError('Erro ao atualizar a lista premontada', err)
@@ -69,6 +92,11 @@ export class PremontadasService {
       await prisma.premontadas.delete({
         where: { id },
       })
+
+      await Promise.all([
+        cacheDel('premontadas:list'),
+        cacheDelPattern(`premontadas:id:${id}`),
+      ])
 
       return { message: 'Sucesso ao deletar a lista premontada' }
     } catch (err: any) {

@@ -1,5 +1,6 @@
 import { NotFoundError, ValidationError } from '../../../errors/errors.js'
 import { prisma } from '../../../prisma/prismaClient.js'
+import { cacheDelPattern, cacheGet, cacheSet } from '../../lib/cache.js'
 import type {
   CreateCatologoInput,
   GetCatalogoQueryInput,
@@ -11,6 +12,9 @@ export interface CreateCatalogoSchemaDTO extends CreateCatologoInput {}
 export interface UpdateCatalogoSchemaDTO extends UpdateCatalogoInput {}
 
 export interface GetCatalogoFilterDTO extends GetCatalogoQueryInput {}
+
+const TTL_LIST = 300  // 5 min
+const TTL_ITEM = 600  // 10 min
 
 export class CatalogoService {
   async createCatalogo(data: CreateCatalogoSchemaDTO) {
@@ -35,6 +39,8 @@ export class CatalogoService {
         throw new ValidationError('Erro ao criar o item no catalogo')
       }
 
+      await cacheDelPattern('catalogo:list:*')
+
       return catalogo
     } catch (err: any) {
       throw new ValidationError('Erro ao criar o item', err)
@@ -42,6 +48,10 @@ export class CatalogoService {
   }
 
   async getCatalogoByID(id: string) {
+    const key = `catalogo:id:${id}`
+    const cached = await cacheGet(key)
+    if (cached) return cached
+
     const catalogo = await prisma.catalogo.findUnique({
       where: { id },
       include: { catalogo_images: true },
@@ -50,6 +60,8 @@ export class CatalogoService {
     if (!catalogo) {
       throw new NotFoundError('Erro o encontrar o catalogo')
     }
+
+    await cacheSet(key, catalogo, TTL_ITEM)
 
     return catalogo
   }
@@ -94,6 +106,10 @@ export class CatalogoService {
     const page = filtros.page ?? 1
     const limit = filtros.limit ?? 10
 
+    const key = `catalogo:list:${JSON.stringify({ ...filtros, page, limit })}`
+    const cached = await cacheGet(key)
+    if (cached) return cached
+
     const skip = (page - 1) * limit
 
     const where = {
@@ -129,7 +145,7 @@ export class CatalogoService {
       prisma.catalogo.count({ where }),
     ])
 
-    return {
+    const result = {
       data: catalogo,
       meta: {
         total,
@@ -138,6 +154,10 @@ export class CatalogoService {
         totalPages: Math.ceil(total / limit),
       },
     }
+
+    await cacheSet(key, result, TTL_LIST)
+
+    return result
   }
 
   async updateCatalogo(data: UpdateCatalogoSchemaDTO, id: string) {
@@ -171,6 +191,11 @@ export class CatalogoService {
         throw new ValidationError('Erro ao atualizar o item')
       }
 
+      await Promise.all([
+        cacheDelPattern('catalogo:list:*'),
+        cacheDelPattern(`catalogo:id:${id}`),
+      ])
+
       return item
     } catch (err: any) {
       throw new ValidationError('Não foi possível atualizar o item', err)
@@ -189,6 +214,11 @@ export class CatalogoService {
     await prisma.catalogo.delete({
       where: { id },
     })
+
+    await Promise.all([
+      cacheDelPattern('catalogo:list:*'),
+      cacheDelPattern(`catalogo:id:${id}`),
+    ])
 
     return { message: 'Sucesso ao deletar o item' }
   }
