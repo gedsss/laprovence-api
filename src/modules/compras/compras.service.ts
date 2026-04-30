@@ -75,8 +75,12 @@ export class ComprasService {
   }
 
   async updateCompras(data: UpdateComprasSchemaDTO, id: string) {
+    const compraAtual = await prisma.compras.findUnique({ where: { id } })
+    if (!compraAtual) throw new NotFoundError('Compra não encontrada')
+
+    let compras
     try {
-      const compras = await prisma.compras.update({
+      compras = await prisma.compras.update({
         where: { id },
         data: {
           ...(data.nome_convidado !== undefined && {
@@ -99,11 +103,23 @@ export class ComprasService {
           }),
         },
       })
-
-      return compras
     } catch (err: any) {
       throw new ValidationError('Erro ao atualizar a compra', err)
     }
+
+    // Decrementa estoque ao aprovar (apenas na transição para Aprovado)
+    if (
+      data.status_pagamento === 'Aprovado' &&
+      compraAtual.status_pagamento !== 'Aprovado' &&
+      compraAtual.catalogo_id
+    ) {
+      prisma.catalogo.updateMany({
+        where: { id: compraAtual.catalogo_id, estoque: { gt: 0 } },
+        data: { estoque: { decrement: 1 } },
+      }).catch(() => {})
+    }
+
+    return compras
   }
 
   async deleteCompras(id: string) {
