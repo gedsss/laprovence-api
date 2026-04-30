@@ -17,36 +17,31 @@ export class ListaItensService {
       throw new MissingFieldError()
     }
 
+    const listaExiste = await prisma.listas.findUnique({
+      where: { id: data.listas_id },
+    })
+    if (!listaExiste) throw new NotFoundError('Lista não encontrada')
+
+    const catalogoExiste = await prisma.catalogo.findUnique({
+      where: { id: data.catalogo_id },
+    })
+    if (!catalogoExiste) throw new NotFoundError('Catálogo não encontrado')
+
+    let listaItem
     try {
-      const listaExiste = await prisma.listas.findUnique({
-        where: { id: data.listas_id },
-      })
-
-      if (!listaExiste) {
-        throw new NotFoundError('Lista não encontrada')
-      }
-
-      const catalogoExiste = await prisma.catalogo.findUnique({
-        where: { id: data.catalogo_id },
-      })
-
-      if (!catalogoExiste) {
-        throw new NotFoundError('Catálogo não encontrado')
-      }
-
-      const listaItem = await prisma.lista_itens.create({
+      listaItem = await prisma.lista_itens.create({
         data: {
           listas_id: data.listas_id,
           catalogo_id: data.catalogo_id,
         },
       })
-
-      await cacheDel(`lista_itens:lista:${data.listas_id}`)
-
-      return listaItem
     } catch (err: any) {
       throw new ValidationError('Não foi possível adicionar o item', err)
     }
+
+    // Invalida cache sem propagar falhas do serviço de cache
+    cacheDel(`lista_itens:lista:${data.listas_id}`).catch(() => {})
+    return listaItem
   }
 
   async getListaItensById(listas_id: string) {
