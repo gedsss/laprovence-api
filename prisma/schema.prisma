@@ -69,7 +69,7 @@ model catalogo {
   tamanho         String?             @db.Text
   descricao       String?             @db.Text
   preco           Decimal             @db.Decimal(10, 2) @default(0)
-  setor           Setor       
+  setor           Setor
   estoque         Int                 @db.Integer @default(0)
   quantidade      Int                 @db.Integer @default(1)
   peso            Decimal             @db.Decimal(6, 2) @default(0)
@@ -81,6 +81,10 @@ model catalogo {
   lista_itens     lista_itens[]
   compras         compras[]
   premontada_itens premontada_itens[]
+
+  @@index([setor])
+  @@index([status])
+  @@index([setor, status])
 }
 
 model catalogo_images {
@@ -90,6 +94,8 @@ model catalogo_images {
   url           String      @db.Text
   posicao       Int         @db.Integer @default(0)
   created_at    DateTime    @db.Timestamptz() @default(now())
+
+  @@index([catalogo_id])
 }
 
 model listas {
@@ -105,8 +111,10 @@ model listas {
   status                  StatusLista      @default(Ativa)
   created_at              DateTime         @db.Timestamptz() @default(now())
   updated_at              DateTime         @db.Timestamptz() @default(now()) @updatedAt
-  lista_itens             lista_itens[]  
+  lista_itens             lista_itens[]
   compras                 compras[]
+
+  @@index([user_id])
 }
 
 model lista_itens {
@@ -116,6 +124,9 @@ model lista_itens {
   catalogo_id   String      @db.Uuid
   catalogo      catalogo    @relation(fields: [catalogo_id], references: [id])
   added_at      DateTime    @db.Timestamptz() @default(now())
+
+  @@index([listas_id])
+  @@index([catalogo_id])
 }
 
 model compras {
@@ -134,6 +145,10 @@ model compras {
   is_new_noivo     Boolean         @db.Boolean @default(false)
   data_compra      DateTime        @db.Timestamptz() @default(now())
   created_at       DateTime        @db.Timestamptz() @default(now())
+
+  @@index([listas_id])
+  @@index([cpf])
+  @@index([status_pagamento])
 }
 
 model premontadas {
