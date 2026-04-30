@@ -11,6 +11,9 @@ export interface CreatePremontadasSchemaDTO extends CreatePremontadasInput {}
 export interface UpdatePremontadasSchemaDTO extends UpdatePremontadasInput {}
 
 const TTL = 600 // 10 min
+// v2: cache keys include premontada_itens relation
+const LIST_KEY = 'premontadas:v2:list'
+const idKey = (id: string) => `premontadas:v2:id:${id}`
 
 export class PremontadasService {
   async createPremontadas(data: CreatePremontadasSchemaDTO) {
@@ -29,12 +32,12 @@ export class PremontadasService {
       throw new ValidationError('Erro ao criar a lista premontada', err)
     }
 
-    cacheDel('premontadas:list').catch(() => {})
+    cacheDel(LIST_KEY).catch(() => {})
     return premontadas
   }
 
   async getPremontadasByID(id: string) {
-    const key = `premontadas:id:${id}`
+    const key = idKey(id)
     const cached = await cacheGet(key)
     if (cached) return cached
 
@@ -53,15 +56,14 @@ export class PremontadasService {
   }
 
   async getPremontadas() {
-    const key = 'premontadas:list'
-    const cached = await cacheGet(key)
+    const cached = await cacheGet(LIST_KEY)
     if (cached) return cached
 
     const premontadas = await prisma.premontadas.findMany({
       include: { premontada_itens: true },
     })
 
-    await cacheSet(key, premontadas, TTL)
+    await cacheSet(LIST_KEY, premontadas, TTL)
 
     return premontadas
   }
@@ -84,8 +86,8 @@ export class PremontadasService {
     }
 
     Promise.all([
-      cacheDel('premontadas:list'),
-      cacheDelPattern(`premontadas:id:${id}`),
+      cacheDel(LIST_KEY),
+      cacheDelPattern(`premontadas:v2:id:${id}`),
     ]).catch(() => {})
 
     return premontadas
@@ -101,8 +103,8 @@ export class PremontadasService {
     }
 
     Promise.all([
-      cacheDel('premontadas:list'),
-      cacheDelPattern(`premontadas:id:${id}`),
+      cacheDel(LIST_KEY),
+      cacheDelPattern(`premontadas:v2:id:${id}`),
     ]).catch(() => {})
 
     return { message: 'Sucesso ao deletar a lista premontada' }

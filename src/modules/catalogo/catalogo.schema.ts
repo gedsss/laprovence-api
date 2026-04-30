@@ -64,7 +64,7 @@ export const GetCatalogoQuerySchema = z.object({
   descricao: z.string().optional(),
   marca: z.string().optional(),
   page: z.coerce.number().min(1).default(1),
-  limit: z.coerce.number().min(1).max(100).default(10),
+  limit: z.coerce.number().min(1).max(500).default(10),
 })
 
 export type GetCatalogoQueryInput = z.infer<typeof GetCatalogoQuerySchema>

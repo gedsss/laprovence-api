@@ -52,7 +52,7 @@ export class PremontadaItensService {
     const itens = await prisma.premontada_itens.findMany({
       where: { premontada_id },
       include: {
-        catalogo: true,
+        catalogo: { include: { catalogo_images: true } },
       },
     })
 
