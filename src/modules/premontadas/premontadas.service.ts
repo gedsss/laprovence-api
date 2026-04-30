@@ -1,6 +1,11 @@
 import { NotFoundError, ValidationError } from '../../../errors/errors.js'
 import { prisma } from '../../../prisma/prismaClient.js'
-import { cacheDel, cacheDelPattern, cacheGet, cacheSet } from '../../lib/cache.js'
+import {
+  cacheDel,
+  cacheDelPattern,
+  cacheGet,
+  cacheSet,
+} from '../../lib/cache.js'
 import type {
   CreatePremontadasInput,
   UpdatePremontadasInput,
@@ -17,7 +22,7 @@ const idKey = (id: string) => `premontadas:v2:id:${id}`
 
 export class PremontadasService {
   async createPremontadas(data: CreatePremontadasSchemaDTO) {
-    let premontadas
+    let premontadas: any
     try {
       premontadas = await prisma.premontadas.create({
         data: {
@@ -69,7 +74,7 @@ export class PremontadasService {
   }
 
   async updatePremontadas(data: UpdatePremontadasInput, id: string) {
-    let premontadas
+    let premontadas: any
     try {
       premontadas = await prisma.premontadas.update({
         where: { id },

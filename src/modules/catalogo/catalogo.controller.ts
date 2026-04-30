@@ -1,10 +1,8 @@
 import type { FastifyRequest, FastifyReply } from 'fastify'
-import {
-  catalogoService,
-  type GetCatalogoFilterDTO,
-} from './catalogo.service.js'
+import { catalogoService } from './catalogo.service.js'
 import {
   CreateCatalogoSchema,
+  GetCatalogoQuerySchema,
   UpdateCatalogoSchema,
 } from './catalogo.schema.js'
 
@@ -34,7 +32,7 @@ export class CatalogoController {
   }
 
   async getCatalogo(request: FastifyRequest, reply: FastifyReply) {
-    const filtros = request.query as GetCatalogoFilterDTO
+    const filtros = GetCatalogoQuerySchema.parse(request.query)
 
     const catalogo = await catalogoService.getCatalogo(filtros)
 

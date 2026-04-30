@@ -78,7 +78,7 @@ export class ComprasService {
     const compraAtual = await prisma.compras.findUnique({ where: { id } })
     if (!compraAtual) throw new NotFoundError('Compra não encontrada')
 
-    let compras
+    let compras: any
     try {
       compras = await prisma.compras.update({
         where: { id },
@@ -113,10 +113,12 @@ export class ComprasService {
       compraAtual.status_pagamento !== 'Aprovado' &&
       compraAtual.catalogo_id
     ) {
-      prisma.catalogo.updateMany({
-        where: { id: compraAtual.catalogo_id, estoque: { gt: 0 } },
-        data: { estoque: { decrement: 1 } },
-      }).catch(() => {})
+      prisma.catalogo
+        .updateMany({
+          where: { id: compraAtual.catalogo_id, estoque: { gt: 0 } },
+          data: { estoque: { decrement: 1 } },
+        })
+        .catch(() => {})
     }
 
     return compras

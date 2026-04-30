@@ -18,8 +18,9 @@ const TTL_ITEM = 600  // 10 min
 
 export class CatalogoService {
   async createCatalogo(data: CreateCatalogoSchemaDTO) {
+    let catalogo
     try {
-      const catalogo = await prisma.catalogo.create({
+      catalogo = await prisma.catalogo.create({
         data: {
           nome: data.nome,
           marca: data.marca ?? null,
@@ -34,17 +35,13 @@ export class CatalogoService {
           version: data.version,
         },
       })
-
-      if (!catalogo) {
-        throw new ValidationError('Erro ao criar o item no catalogo')
-      }
-
-      await cacheDelPattern('catalogo:list:*')
-
-      return catalogo
     } catch (err: any) {
       throw new ValidationError('Erro ao criar o item', err)
     }
+
+    cacheDelPattern('catalogo:list:*').catch(() => {})
+
+    return catalogo
   }
 
   async getCatalogoByID(id: string) {
@@ -169,8 +166,9 @@ export class CatalogoService {
       throw new NotFoundError('Não foi possivel encontrar o catalogo')
     }
 
+    let item
     try {
-      const item = await prisma.catalogo.update({
+      item = await prisma.catalogo.update({
         where: { id },
         data: {
           ...(data.nome !== undefined && { nome: data.nome }),
@@ -186,20 +184,16 @@ export class CatalogoService {
           ...(data.version !== undefined && { version: data.version }),
         },
       })
-
-      if (!item) {
-        throw new ValidationError('Erro ao atualizar o item')
-      }
-
-      await Promise.all([
-        cacheDelPattern('catalogo:list:*'),
-        cacheDelPattern(`catalogo:id:${id}`),
-      ])
-
-      return item
     } catch (err: any) {
       throw new ValidationError('Não foi possível atualizar o item', err)
     }
+
+    Promise.all([
+      cacheDelPattern('catalogo:list:*'),
+      cacheDelPattern(`catalogo:id:${id}`),
+    ]).catch(() => {})
+
+    return item
   }
 
   async deleteCatalogo(id: string) {
