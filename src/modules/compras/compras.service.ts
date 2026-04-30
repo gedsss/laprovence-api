@@ -71,12 +71,7 @@ export class ComprasService {
     const compras = await prisma.compras.findMany({
       where: { listas_id },
     })
-
-    if (!compras || compras.length === 0) {
-      throw new NotFoundError('Nenhuma compra encontrada com este CPF')
-    }
-
-    return compras
+    return compras ?? []
   }
 
   async updateCompras(data: UpdateComprasSchemaDTO, id: string) {

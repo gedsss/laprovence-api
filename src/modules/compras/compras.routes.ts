@@ -4,7 +4,6 @@ import { comprasController } from './compras.controller.js'
 export async function comprasRoutes(app: FastifyInstance) {
   app.post(
     '/compras',
-    { preHandler: [app.authenticate] },
     async (request, reply) => {
       return comprasController.createCompras(request, reply)
     }

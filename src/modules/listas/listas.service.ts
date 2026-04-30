@@ -79,7 +79,9 @@ export class ListasService {
   }
 
   async getListas() {
-    const lista = await prisma.listas.findMany()
+    const lista = await prisma.listas.findMany({
+      include: { lista_itens: true },
+    })
 
     if (!lista) throw new NotFoundError('Erro ao encontrar as listas')
 
