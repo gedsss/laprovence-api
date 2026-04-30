@@ -40,6 +40,7 @@ export class PremontadasService {
 
     const premontadas = await prisma.premontadas.findUnique({
       where: { id },
+      include: { premontada_itens: true },
     })
 
     if (!premontadas) {
@@ -56,7 +57,9 @@ export class PremontadasService {
     const cached = await cacheGet(key)
     if (cached) return cached
 
-    const premontadas = await prisma.premontadas.findMany()
+    const premontadas = await prisma.premontadas.findMany({
+      include: { premontada_itens: true },
+    })
 
     await cacheSet(key, premontadas, TTL)
 
