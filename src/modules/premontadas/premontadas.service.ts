@@ -14,8 +14,9 @@ const TTL = 600 // 10 min
 
 export class PremontadasService {
   async createPremontadas(data: CreatePremontadasSchemaDTO) {
+    let premontadas
     try {
-      const premontadas = await prisma.premontadas.create({
+      premontadas = await prisma.premontadas.create({
         data: {
           nome: data.nome,
           descricao: data.descricao ?? null,
@@ -24,13 +25,12 @@ export class PremontadasService {
           img: data.img ?? null,
         },
       })
-
-      await cacheDel('premontadas:list')
-
-      return premontadas
     } catch (err: any) {
       throw new ValidationError('Erro ao criar a lista premontada', err)
     }
+
+    cacheDel('premontadas:list').catch(() => {})
+    return premontadas
   }
 
   async getPremontadasByID(id: string) {
@@ -64,8 +64,9 @@ export class PremontadasService {
   }
 
   async updatePremontadas(data: UpdatePremontadasInput, id: string) {
+    let premontadas
     try {
-      const premontadas = await prisma.premontadas.update({
+      premontadas = await prisma.premontadas.update({
         where: { id },
         data: {
           ...(data.nome !== undefined && { nome: data.nome }),
@@ -75,16 +76,16 @@ export class PremontadasService {
           ...(data.img !== undefined && { img: data.img }),
         },
       })
-
-      await Promise.all([
-        cacheDel('premontadas:list'),
-        cacheDelPattern(`premontadas:id:${id}`),
-      ])
-
-      return premontadas
     } catch (err: any) {
       throw new ValidationError('Erro ao atualizar a lista premontada', err)
     }
+
+    Promise.all([
+      cacheDel('premontadas:list'),
+      cacheDelPattern(`premontadas:id:${id}`),
+    ]).catch(() => {})
+
+    return premontadas
   }
 
   async deletePremontadas(id: string) {
@@ -92,16 +93,16 @@ export class PremontadasService {
       await prisma.premontadas.delete({
         where: { id },
       })
-
-      await Promise.all([
-        cacheDel('premontadas:list'),
-        cacheDelPattern(`premontadas:id:${id}`),
-      ])
-
-      return { message: 'Sucesso ao deletar a lista premontada' }
     } catch (err: any) {
       throw new ValidationError('Erro ao deletar a lista premontada', err)
     }
+
+    Promise.all([
+      cacheDel('premontadas:list'),
+      cacheDelPattern(`premontadas:id:${id}`),
+    ]).catch(() => {})
+
+    return { message: 'Sucesso ao deletar a lista premontada' }
   }
 }
 
