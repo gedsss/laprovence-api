@@ -82,6 +82,8 @@ export class ListasService {
           codigo: this.generateCodigo(),
           user_id,
           nome_noivos: `${user.nome_noiva} & ${user.nome_noivo}`,
+          telefone: user.telefone,
+          data_casamento: user.data_casamento,
           status: 'Ativa',
         },
       })
@@ -92,7 +94,19 @@ export class ListasService {
 
   async getListas() {
     const lista = await prisma.listas.findMany({
-      include: { lista_itens: true },
+      include: {
+        lista_itens: true,
+        user: {
+          select: {
+            id: true,
+            nome_noiva: true,
+            nome_noivo: true,
+            email: true,
+            telefone: true,
+            data_casamento: true,
+          },
+        },
+      },
     })
 
     if (!lista) throw new NotFoundError('Erro ao encontrar as listas')
