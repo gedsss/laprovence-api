@@ -10,11 +10,12 @@ export interface UpdateComprasSchemaDTO extends UpdateComprasSchemaInput {}
 
 export class ComprasService {
   async createCompras(data: CreateComprasSchemaDTO) {
-    const catalogo = await prisma.catalogo.findUnique({
-      where: { id: data.catalogo_id },
-    })
-
-    if (!catalogo) throw new ValidationError('ID de catálogo inválida')
+    if (data.catalogo_id) {
+      const catalogo = await prisma.catalogo.findUnique({
+        where: { id: data.catalogo_id },
+      })
+      if (!catalogo) throw new ValidationError('ID de catálogo inválida')
+    }
 
     const lista = await prisma.listas.findUnique({
       where: { id: data.listas_id },

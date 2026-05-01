@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 export const CreateComprasSchema = z.object({
   listas_id: z.uuid('O id da lista deve ser um uuid válido'),
-  catalogo_id: z.uuid('O id do catalogo deve ser um uuid válido'),
+  catalogo_id: z.uuid('O id do catalogo deve ser um uuid válido').optional().nullable(),
   nome_convidado: z.string(),
   cpf: z.string().max(11, 'o cpf não pode passar de 11 caracteres'),
   telefone: z.string(),
