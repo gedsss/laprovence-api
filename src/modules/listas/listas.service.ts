@@ -69,11 +69,23 @@ export class ListasService {
   }
 
   async getListaByNoivo(user_id: string) {
-    const lista = await prisma.listas.findFirst({
+    let lista = await prisma.listas.findFirst({
       where: { user_id },
     })
 
-    if (!lista) throw new NotFoundError('Erro ao encontrar a lista')
+    if (!lista) {
+      const user = await prisma.user.findUnique({ where: { id: user_id } })
+      if (!user) throw new NotFoundError('Usuário não encontrado')
+
+      lista = await prisma.listas.create({
+        data: {
+          codigo: this.generateCodigo(),
+          user_id,
+          nome_noivos: `${user.nome_noiva} & ${user.nome_noivo}`,
+          status: 'Ativa',
+        },
+      })
+    }
 
     return lista
   }
