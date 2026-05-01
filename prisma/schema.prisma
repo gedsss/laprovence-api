@@ -133,7 +133,7 @@ model compras {
   id               String          @db.Uuid @default(dbgenerated("gen_random_uuid()")) @id
   listas_id        String          @db.Uuid
   listas           listas          @relation(fields: [listas_id], references: [id])
-  catalogo_id      String?          @db.Uuid @unique
+  catalogo_id      String?          @db.Uuid
   catalogo         catalogo?        @relation(fields: [catalogo_id], references: [id])
   nome_convidado   String          @db.Text
   cpf              String          @db.Char(11)
