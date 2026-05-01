@@ -19,7 +19,7 @@ async function main() {
     create: {
       nome_noiva: 'Gestora',
       nome_noivo: 'Teste',
-      email: 'gestor@laprovence.test',
+      email: 'gestor@laprovence.com',
       telefone: '+5511999999999',
       data_casamento: new Date('2026-06-01'),
       password,
