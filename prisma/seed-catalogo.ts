@@ -11,9 +11,12 @@ interface Item {
   setor: Setor
 }
 
-// 70 itens (5 já cadastrados no CSV foram pulados)
+// 75 itens (todos do CSV, incluindo os já cadastrados)
 const items: Item[] = [
+  { nome: 'Conj. 6 Taças Crystal Glass', marca: 'Bohemia', tamanho: '300ml', preco: '1303.50', setor: 'Mesa_posta' },
   { nome: 'Conj. 6 Copos Azul Lapidado em Vidro', marca: 'La Provence Decor', tamanho: '400ml', preco: '585.00', setor: 'Mesa_posta' },
+  { nome: 'Jarra em Vidro Pétalas La Provence Decor', marca: 'Fracalanza', tamanho: '1,8L', preco: '359.00', setor: 'Mesa_posta' },
+  { nome: 'Conj. 4 Copos em Vidro Pétalas La Provence Decor', marca: 'Fracalanza', tamanho: '480ml', preco: '489.00', setor: 'Mesa_posta' },
   { nome: 'Conj. 6 Copos Verde Lapidado em Vidro', marca: 'La Provence Decor', tamanho: '400ml', preco: '585.00', setor: 'Mesa_posta' },
   { nome: 'Conj. 6 Taças em Cristal para Água Verde Lapidada', marca: 'Bohemia', tamanho: '300ml', preco: '610.00', setor: 'Mesa_posta' },
   { nome: 'Jarra em Vidro Borosil', marca: 'Fracalanza', tamanho: '1,2L', preco: '175.00', setor: 'Mesa_posta' },
@@ -29,6 +32,8 @@ const items: Item[] = [
   { nome: 'Conj. 6 Pratos Fundos Borboletas em Cerâmica', marca: 'Concept Scala', tamanho: '21,5cm', preco: '290.00', setor: 'Mesa_posta' },
   { nome: 'Conj. 6 Pratos Rasos Borboletas em Cerâmica', marca: 'Concept Scala', tamanho: '27,5cm', preco: '350.00', setor: 'Mesa_posta' },
   { nome: 'Conj. 6 Xícaras com Pires Borboletas em Cerâmica', marca: 'Concept Scala', tamanho: '300ml', preco: '360.00', setor: 'Mesa_posta' },
+  { nome: 'Travessa Grande Folha em Porcelana Sommelier', marca: 'Scala', tamanho: '35cm', preco: '188.85', setor: 'Mesa_posta' },
+  { nome: 'Fruteira Média Folha Verde Alta em Porcelana', marca: 'Scala', tamanho: '33,5cm', preco: '280.00', setor: 'Mesa_posta' },
   { nome: 'Fruteira Média Folha Rasa em Porcelana', marca: 'Scala', tamanho: '33,5cm', preco: '200.00', setor: 'Mesa_posta' },
   { nome: 'Conj. 36 Peças Jantar em Porcelana Fanci Menta', marca: 'Wolff', preco: '2700.00', setor: 'Mesa_posta' },
   { nome: 'Rechaud Redondo em Cerâmica com Queimador em Cobre', marca: 'Wolff', tamanho: '640g', preco: '780.30', setor: 'Mesa_posta' },
