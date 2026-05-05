@@ -38,6 +38,17 @@ export class ComprasService {
           is_new_noivo: data.is_new_noivo,
         },
       })
+
+      // Reserva o estoque imediatamente ao criar a compra
+      if (data.catalogo_id) {
+        prisma.catalogo
+          .updateMany({
+            where: { id: data.catalogo_id, estoque: { gt: 0 } },
+            data: { estoque: { decrement: 1 } },
+          })
+          .catch(() => {})
+      }
+
       return compras
     } catch (err: any) {
       throw new ValidationError('Erro ao criar a compra', err)
@@ -108,16 +119,16 @@ export class ComprasService {
       throw new ValidationError('Erro ao atualizar a compra', err)
     }
 
-    // Decrementa estoque ao aprovar (apenas na transição para Aprovado)
+    // Devolve o estoque se a compra for rejeitada (já foi decrementado na criação)
     if (
-      data.status_pagamento === 'Aprovado' &&
-      compraAtual.status_pagamento !== 'Aprovado' &&
+      data.status_pagamento === 'Rejeitado' &&
+      compraAtual.status_pagamento !== 'Rejeitado' &&
       compraAtual.catalogo_id
     ) {
       prisma.catalogo
         .updateMany({
-          where: { id: compraAtual.catalogo_id, estoque: { gt: 0 } },
-          data: { estoque: { decrement: 1 } },
+          where: { id: compraAtual.catalogo_id },
+          data: { estoque: { increment: 1 } },
         })
         .catch(() => {})
     }

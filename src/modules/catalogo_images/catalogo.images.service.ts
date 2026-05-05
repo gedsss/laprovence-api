@@ -36,19 +36,15 @@ export class CatalogoImagesService {
   }
 
   async getCatalogoImagesByID(id: string) {
-    try {
-      const imagem = await prisma.catalogo_images.findUnique({
-        where: { id },
-      })
+    const imagem = await prisma.catalogo_images.findUnique({
+      where: { id },
+    })
 
-      if (!imagem) {
-        throw new NotFoundError('Não foi possível encontrar a imagem')
-      }
-
-      return imagem
-    } catch (err: any) {
-      throw new ValidationError('Erro ao encontrar a imagem', err)
+    if (!imagem) {
+      throw new NotFoundError('Não foi possível encontrar a imagem')
     }
+
+    return imagem
   }
 
   async updateCatalogoImages(id: string, data: UpdateCatalogoImagesSchemaDTO) {
@@ -72,19 +68,13 @@ export class CatalogoImagesService {
   }
 
   async deleteCatalogoImages(id: string) {
-    try {
-      const imagem = await prisma.catalogo_images.delete({
-        where: { id },
-      })
+    const imagem = await prisma.catalogo_images.findUnique({ where: { id } })
 
-      if (!(await prisma.catalogo_images.findUnique({ where: { id } }))) {
-        throw new NotFoundError('Erro ao encontrar a imagem para deletar')
-      }
-
-      return imagem
-    } catch (err: any) {
-      throw new ValidationError('Não foi possível deletar a imagem', err)
+    if (!imagem) {
+      throw new NotFoundError('Erro ao encontrar a imagem para deletar')
     }
+
+    await prisma.catalogo_images.delete({ where: { id } })
   }
 }
 
