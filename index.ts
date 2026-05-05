@@ -21,7 +21,7 @@ import authPlugin from './src/plugins/auth.js'
 
 const fastify = Fastify({
   logger: true,
-  bodyLimit: 10 * 1024 * 1024, // 10MB
+  bodyLimit: 20 * 1024 * 1024, // 20MB
 })
 
 fastify.register(jwt, {
@@ -78,6 +78,13 @@ fastify.setErrorHandler((error: FastifyError | AppError, _request, reply) => {
       code: error.code,
       message: error.message,
       details: error.details,
+    })
+  }
+
+  if (error.statusCode === 413) {
+    return reply.status(413).send({
+      success: false,
+      message: 'Imagem grande demais. Utilize uma imagem menor que 20MB.',
     })
   }
 
