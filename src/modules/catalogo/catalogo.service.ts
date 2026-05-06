@@ -205,6 +205,9 @@ export class CatalogoService {
       throw new NotFoundError('Erro ao encontrar o item')
     }
 
+    await prisma.catalogo_images.deleteMany({ where: { catalogo_id: id } })
+    await prisma.lista_itens.deleteMany({ where: { catalogo_id: id } })
+
     await prisma.catalogo.delete({
       where: { id },
     })
