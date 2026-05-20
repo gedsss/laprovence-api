@@ -12,6 +12,7 @@ import { comprasRoutes } from './src/modules/compras/compras.routes.js'
 import { premontadasRoutes } from './src/modules/premontadas/premontadas.routes.js'
 import { premontadaItensRoutes } from './src/modules/premontada_itens/premontada_itens.routes.js'
 import { authRoutes } from './src/auth/auth.routes.js'
+import { pagBankRoutes } from './src/pagbank/pagbank.routes.js'
 import { AppError } from './errors/appError.js'
 import helmet from '@fastify/helmet'
 import cors from '@fastify/cors'
@@ -45,6 +46,7 @@ fastify.register(comprasRoutes)
 fastify.register(premontadasRoutes)
 fastify.register(premontadaItensRoutes)
 fastify.register(authRoutes)
+fastify.register(pagBankRoutes)
 
 fastify.register(rateLimit, {
   global: true,
