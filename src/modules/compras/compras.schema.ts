@@ -4,6 +4,7 @@ export const CreateComprasSchema = z.object({
   listas_id: z.uuid('O id da lista deve ser um uuid válido'),
   catalogo_id: z.uuid('O id do catalogo deve ser um uuid válido').optional().nullable(),
   nome_convidado: z.string(),
+  email: z.email('E-mail inválido').optional().nullable(),
   cpf: z.string().max(11, 'o cpf não pode passar de 11 caracteres'),
   telefone: z.string(),
   valor_pago: z.string().regex(/^\d{1,8}(\.\d{1,2})?$/, {
