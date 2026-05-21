@@ -29,6 +29,31 @@ async function main() {
   })
 
   console.log('Gestor seed criado ou atualizado:', gestor.email)
+
+  const gestorPagBank = await prisma.user.upsert({
+    where: { email: 'pagbank@laprovence.com' },
+    update: {
+      nome_noiva: 'PagBank',
+      nome_noivo: 'Gestor',
+      telefone: '+5511999999998',
+      data_casamento: new Date('2026-06-01'),
+      password,
+      role: 'gestor',
+      is_system: true,
+    },
+    create: {
+      nome_noiva: 'PagBank',
+      nome_noivo: 'Gestor',
+      email: 'pagbank@laprovence.com',
+      telefone: '+5511999999998',
+      data_casamento: new Date('2026-06-01'),
+      password,
+      role: 'gestor',
+      is_system: true,
+    },
+  })
+
+  console.log('Gestor PagBank seed criado ou atualizado:', gestorPagBank.email)
 }
 
 main()
