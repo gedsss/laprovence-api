@@ -20,11 +20,10 @@ export interface PagBankItem {
   unit_amount: number
 }
 
-export interface PixCharge {
-  reference_id?: string
-  description?: string
-  amount: { value: number; currency: 'BRL' }
-  payment_method: { type: 'PIX' }
+// PIX usa qr_codes, não charges
+export interface QrCodeInput {
+  amount: { value: number }
+  expiration_date?: string
 }
 
 export interface CreditCardCharge {
@@ -37,26 +36,32 @@ export interface CreditCardCharge {
     capture: boolean
     card: {
       encrypted: string
-      security_code?: string
-      holder: { name: string }
       store?: boolean
+    }
+    // holder fica fora de card, dentro de payment_method
+    holder: {
+      name: string
+      tax_id?: string
     }
   }
 }
-
-export type PagBankCharge = PixCharge | CreditCardCharge
 
 export interface CreateOrderInput {
   reference_id: string
   customer: PagBankCustomer
   items: PagBankItem[]
-  charges: PagBankCharge[]
+  qr_codes?: QrCodeInput[]
+  charges?: CreditCardCharge[]
   notification_urls?: string[]
 }
 
-export interface QrCode {
+export type QrCodeStatus = 'WAITING' | 'PAID' | 'EXPIRED'
+
+export interface QrCodeResponse {
   id: string
-  expiration_date: string
+  expiration_date?: string
+  amount: { value: number }
+  status?: QrCodeStatus
   text: string
   links: Array<{ rel: string; href: string; media: string; type: string }>
 }
@@ -76,17 +81,9 @@ export interface ChargeResponse {
   amount: {
     value: number
     currency: string
-    summary: {
-      total: number
-      paid: number
-      refunded: number
-    }
+    summary: { total: number; paid: number; refunded: number }
   }
   payment_method: { type: string; installments?: number }
-  payment_method_flows?: {
-    type: string
-    qr_codes?: QrCode[]
-  }
 }
 
 export interface OrderResponse {
@@ -95,8 +92,15 @@ export interface OrderResponse {
   created_at: string
   customer: PagBankCustomer
   items: PagBankItem[]
-  charges: ChargeResponse[]
+  qr_codes?: QrCodeResponse[]
+  charges?: ChargeResponse[]
   links: Array<{ rel: string; href: string; media: string; type: string }>
+}
+
+export interface PublicKeyResponse {
+  public_key: string
+  created_at: string
+  version?: string
 }
 
 export async function createOrder(input: CreateOrderInput): Promise<OrderResponse> {
@@ -105,4 +109,8 @@ export async function createOrder(input: CreateOrderInput): Promise<OrderRespons
 
 export async function getOrder(orderId: string): Promise<OrderResponse> {
   return pagbankRequest<OrderResponse>('GET', `/orders/${orderId}`)
+}
+
+export async function getPublicKey(): Promise<PublicKeyResponse> {
+  return pagbankRequest<PublicKeyResponse>('GET', '/public-keys/card')
 }

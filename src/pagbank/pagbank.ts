@@ -15,6 +15,10 @@ export async function pagbankRequest<T>(
 ): Promise<T> {
   let response: Response
 
+  if (body !== undefined) {
+    const preview = JSON.stringify(body).slice(0, 500)
+    console.log('[PagBank req]', method, path, preview)
+  }
   try {
     response = await fetch(`${BASE_URL}${path}`, {
       method,
@@ -31,10 +35,11 @@ export async function pagbankRequest<T>(
   const data = await response.json()
 
   if (!response.ok) {
-    throw new ExternalServiceError(
-      'PagBank',
-      new Error(`HTTP ${response.status}: ${JSON.stringify(data)}`)
-    )
+    console.error('[PagBank]', method, path, '→', response.status, JSON.stringify(data))
+    // Extrai mensagem legível dos erros do PagBank
+    const msgs: string[] = (data?.error_messages ?? []).map((e: { description: string }) => e.description)
+    const detail = msgs.length > 0 ? msgs.join('; ') : `HTTP ${response.status}`
+    throw new ExternalServiceError('PagBank', new Error(detail))
   }
 
   return data as T
