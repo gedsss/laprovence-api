@@ -1,16 +1,48 @@
 import bcrypt from 'bcrypt'
-import { NotFoundError, ValidationError } from '../../../errors/errors.js'
+import {
+  DuplicateEmailError,
+  DuplicateNumberError,
+  NotFoundError,
+  ValidationError,
+} from '../../../errors/errors.js'
 import { prisma } from '../../../prisma/prismaClient.js'
 import type { CreateUserInput, UpdateUserInput } from './user.schema.js'
-import { cnpj, cpf } from 'cpf-cnpj-validator'
 
 export interface CreateUserSchemaDTO extends CreateUserInput {}
 
 export interface UpdateUserSchemaDTO extends UpdateUserInput {}
 
 interface PrismaUniqueError {
-  code: string
-  meta?: { target?: string[] }
+  code?: string
+  meta?: {
+    target?: string[]
+    driverAdapterError?: {
+      cause?: {
+        constraint?: {
+          fields?: string[]
+        }
+      }
+    }
+  }
+}
+
+function resolveUniqueField(error: PrismaUniqueError) {
+  return (
+    error.meta?.target?.[0] ??
+    error.meta?.driverAdapterError?.cause?.constraint?.fields?.[0]
+  )
+}
+
+function throwUserCreateConflict(error: unknown): never {
+  const err = error as PrismaUniqueError
+  if (err.code === 'P2002') {
+    const field = resolveUniqueField(err)
+    if (field === 'email') throw new DuplicateEmailError('')
+    if (field === 'telefone') throw new DuplicateNumberError('')
+    throw new ValidationError('Dados ja cadastrados')
+  }
+
+  throw error
 }
 
 export class UserService {
@@ -39,14 +71,7 @@ export class UserService {
 
       return user
     } catch (error) {
-      const err = error as PrismaUniqueError
-      if (err.code === 'P2002') {
-        const field = err.meta?.target?.[0]
-        if (field === 'email') {
-          throw new ValidationError('Email já registrado')
-        }
-        throw error
-      }
+      throwUserCreateConflict(error)
     }
   }
 
@@ -64,7 +89,7 @@ export class UserService {
     })
 
     if (!user) {
-      throw new NotFoundError('Erro ao encontrar o usuário')
+      throw new NotFoundError('Erro ao encontrar o usuario')
     }
 
     return user
@@ -97,14 +122,7 @@ export class UserService {
 
       return user
     } catch (error) {
-      const err = error as PrismaUniqueError
-      if (err.code === 'P2002') {
-        const field = err.meta?.target?.[0]
-        if (field === 'email') {
-          throw new ValidationError('Email já em uso')
-        }
-        throw error
-      }
+      throwUserCreateConflict(error)
     }
   }
 
@@ -115,12 +133,12 @@ export class UserService {
     })
 
     if (!existingUser) {
-      throw new NotFoundError('Usuário não encontrado')
+      throw new NotFoundError('Usuario nao encontrado')
     }
 
     if (existingUser.is_system) {
       throw new ValidationError(
-        'Não é possível deletar uma conta do tipo gestor'
+        'Nao e possivel deletar uma conta do tipo gestor'
       )
     }
 
@@ -128,7 +146,7 @@ export class UserService {
       where: { id },
     })
 
-    return { message: 'Usuário deletado com sucesso' }
+    return { message: 'Usuario deletado com sucesso' }
   }
 }
 
