@@ -31,6 +31,24 @@ fastify.register(jwt, {
 
 fastify.register(authPlugin)
 
+fastify.register(rateLimit, {
+  global: true,
+  max: 100,
+  timeWindow: '1 minute',
+})
+
+const corsOrigins = process.env.CORS_ORIGINS
+  ?.split(',')
+  .map(origin => origin.trim())
+  .filter(Boolean)
+
+fastify.register(cors, {
+  origin: corsOrigins?.length ? corsOrigins : true,
+  credentials: true,
+})
+
+fastify.register(helmet)
+
 // Rota raiz
 fastify.get('/', (_request, reply) => {
   return reply.send({ status: 'ok', message: 'Servidor funcionando' })
@@ -47,19 +65,6 @@ fastify.register(premontadasRoutes)
 fastify.register(premontadaItensRoutes)
 fastify.register(authRoutes)
 fastify.register(pagBankRoutes)
-
-fastify.register(rateLimit, {
-  global: true,
-  max: 100,
-  timeWindow: '1 minute',
-})
-
-fastify.register(cors, {
-  origin: true,
-  credentials: true,
-})
-
-fastify.register(helmet)
 
 // Handler de erro global
 fastify.setErrorHandler((error: FastifyError | AppError, _request, reply) => {

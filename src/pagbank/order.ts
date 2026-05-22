@@ -15,6 +15,7 @@ export interface PagBankPhone {
 }
 
 export interface PagBankItem {
+  reference_id?: string
   name: string
   quantity: number
   unit_amount: number
@@ -103,8 +104,16 @@ export interface PublicKeyResponse {
   version?: string
 }
 
-export async function createOrder(input: CreateOrderInput): Promise<OrderResponse> {
-  return pagbankRequest<OrderResponse>('POST', '/orders', input)
+export async function createOrder(
+  input: CreateOrderInput,
+  idempotencyKey?: string
+): Promise<OrderResponse> {
+  return pagbankRequest<OrderResponse>(
+    'POST',
+    '/orders',
+    input,
+    idempotencyKey ? { idempotencyKey } : {}
+  )
 }
 
 export async function getOrder(orderId: string): Promise<OrderResponse> {

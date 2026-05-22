@@ -6,7 +6,10 @@ import {
   GetOrderStatusSchema,
 } from './pagbank.schema.js'
 import { pagBankService } from './pagbank.service.js'
+import { PAGBANK_SIGNATURE_HEADER, validatePagBankWebhookSignature } from './webhook-auth.js'
 import { processWebhook } from './webhook.js'
+
+type WebhookRequest = FastifyRequest & { rawBody?: string }
 
 export class PagBankController {
   async createPixOrder(request: FastifyRequest, reply: FastifyReply) {
@@ -38,9 +41,27 @@ export class PagBankController {
     return reply.send({ success: true, data: result })
   }
 
-  async webhook(request: FastifyRequest, reply: FastifyReply) {
-    const payload = request.body as { id: string; reference_id?: string }
-    processWebhook(payload).catch(() => {})
+  async webhook(request: WebhookRequest, reply: FastifyReply) {
+    const rawBody = request.rawBody ?? JSON.stringify(request.body ?? {})
+    const isValidSignature = validatePagBankWebhookSignature(
+      rawBody,
+      request.headers[PAGBANK_SIGNATURE_HEADER]
+    )
+
+    if (!isValidSignature) {
+      request.log.warn('[PagBank webhook] assinatura invalida')
+      return reply.status(401).send()
+    }
+
+    const payload = request.body as { id?: string; reference_id?: string } | undefined
+    if (!payload?.id) {
+      return reply.status(400).send({ success: false, message: 'Payload invalido' })
+    }
+
+    processWebhook(payload).catch(error => {
+      request.log.error({ err: error }, '[PagBank webhook] falha ao processar')
+    })
+
     return reply.status(200).send()
   }
 }

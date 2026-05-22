@@ -16,6 +16,7 @@ export const CreateComprasSchema = z.object({
     .default('Pendente'),
   is_new_gestor: z.boolean().default(true),
   is_new_noivo: z.boolean().default(false),
+  recaptcha_token: z.string().min(1).optional(),
 })
 
 export const ComprasParamsSchema = z.object({

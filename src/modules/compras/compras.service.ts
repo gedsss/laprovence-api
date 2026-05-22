@@ -1,5 +1,6 @@
 import { NotFoundError, ValidationError } from '../../../errors/errors.js'
 import { prisma } from '../../../prisma/prismaClient.js'
+import { verifyRecaptchaToken } from '../../lib/recaptcha.js'
 import type {
   CreateComprasSchemaInput,
   UpdateComprasSchemaInput,
@@ -10,6 +11,11 @@ export interface UpdateComprasSchemaDTO extends UpdateComprasSchemaInput {}
 
 export class ComprasService {
   async createCompras(data: CreateComprasSchemaDTO) {
+    await verifyRecaptchaToken(data.recaptcha_token, [
+      'checkout_start',
+      'gift_confirm',
+    ])
+
     if (data.catalogo_id) {
       const catalogo = await prisma.catalogo.findUnique({
         where: { id: data.catalogo_id },
