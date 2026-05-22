@@ -136,13 +136,11 @@ model compras {
   catalogo_id      String?          @db.Uuid
   catalogo         catalogo?        @relation(fields: [catalogo_id], references: [id])
   nome_convidado   String          @db.Text
-  email            String?         @db.Text
   cpf              String          @db.Char(11)
   telefone         String          @db.Text
   valor_pago       Decimal         @db.Decimal(10,2)
   forma_pagamento  String          @db.Text
   status_pagamento StatusPagamento @default(Pendente)
-  pagbank_order_id String?         @db.Text
   is_new_gestor    Boolean         @db.Boolean @default(true)
   is_new_noivo     Boolean         @db.Boolean @default(false)
   data_compra      DateTime        @db.Timestamptz() @default(now())

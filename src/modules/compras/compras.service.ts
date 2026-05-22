@@ -27,9 +27,8 @@ export class ComprasService {
       const compras = await prisma.compras.create({
         data: {
           listas_id: data.listas_id,
-          catalogo_id: data.catalogo_id ?? null,
+          catalogo_id: data.catalogo_id,
           nome_convidado: data.nome_convidado,
-          email: data.email ?? null,
           cpf: data.cpf,
           telefone: data.telefone,
           valor_pago: data.valor_pago,
