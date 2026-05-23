@@ -20,13 +20,33 @@ import rateLimit from '@fastify/rate-limit'
 import jwt from '@fastify/jwt'
 import authPlugin from './src/plugins/auth.js'
 
+const jwtSecret = process.env.JWT_PASS
+
+if (!jwtSecret || jwtSecret.length < 32) {
+  throw new Error('JWT_PASS deve ser configurado com pelo menos 32 caracteres')
+}
+
 const fastify = Fastify({
-  logger: true,
+  trustProxy: true,
+  logger: {
+    redact: [
+      'req.headers.authorization',
+      'req.headers.cookie',
+      'res.headers["set-cookie"]',
+      '*.password',
+      '*.token',
+      '*.recaptcha_token',
+      '*.card_encrypted',
+      '*.cpf',
+      '*.email',
+      '*.telefone',
+    ],
+  },
   bodyLimit: 20 * 1024 * 1024, // 20MB
 })
 
 fastify.register(jwt, {
-  secret: process.env.JWT_PASS!,
+  secret: jwtSecret,
 })
 
 fastify.register(authPlugin)

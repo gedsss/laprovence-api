@@ -17,11 +17,33 @@ export async function authRoutes(app: FastifyInstance) {
     }
   )
 
-  app.post('/forgot-password', async (request, reply) => {
-    return authController.forgotPassword(request, reply)
-  })
+  app.post(
+    '/forgot-password',
+    {
+      config: {
+        rateLimit: {
+          max: 3,
+          timeWindow: '5 minutes',
+        },
+      },
+    },
+    async (request, reply) => {
+      return authController.forgotPassword(request, reply)
+    }
+  )
 
-  app.post('/reset-password', async (request, reply) => {
-    return authController.resetPassword(request, reply)
-  })
+  app.post(
+    '/reset-password',
+    {
+      config: {
+        rateLimit: {
+          max: 5,
+          timeWindow: '5 minutes',
+        },
+      },
+    },
+    async (request, reply) => {
+      return authController.resetPassword(request, reply)
+    }
+  )
 }
