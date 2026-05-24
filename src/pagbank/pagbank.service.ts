@@ -32,7 +32,7 @@ function parsePhone(telefone: string): PagBankPhone | undefined {
   }
 }
 
-type CompraStatus = 'Pendente' | 'Aprovado' | 'Rejeitado'
+type CompraStatus = 'Pendente' | 'Aprovado' | 'Rejeitado' | 'Cancelado'
 
 const STATUS_MAP: Record<string, CompraStatus> = {
   AUTHORIZED: 'Aprovado',
@@ -50,6 +50,8 @@ type CompraStatusRow = {
   status_pagamento: CompraStatus
   catalogo_id: string | null
 }
+
+const RESERVATION_DURATION_MS = 10 * 60 * 1000
 
 function getRawOrderStatus(order: OrderResponse): string | undefined {
   const chargeStatus = order.charges?.[0]?.status
@@ -83,12 +85,47 @@ async function returnStockOnce(compra: CompraStatusRow) {
   })
 }
 
+async function requireActiveReservation(
+  compra: CompraStatusRow & { data_compra: Date }
+) {
+  if (compra.status_pagamento !== 'Pendente') {
+    throw new BusinessRuleError('Esta tentativa de pagamento nao esta mais ativa')
+  }
+
+  const active = await prisma.compras.findFirst({
+    where: { id: compra.id, status_pagamento: 'Pendente' },
+    select: { id: true },
+  })
+  if (!active) {
+    throw new BusinessRuleError('Esta tentativa de pagamento nao esta mais ativa')
+  }
+
+  const expiration = new Date(
+    compra.data_compra.getTime() + RESERVATION_DURATION_MS
+  )
+  if (expiration.getTime() > Date.now()) return expiration
+
+  const expired = await prisma.compras.updateMany({
+    where: { id: compra.id, status_pagamento: 'Pendente' },
+    data: { status_pagamento: 'Rejeitado' },
+  })
+  if (expired.count > 0) {
+    await returnStockOnce(compra).catch(() => {})
+  }
+
+  throw new BusinessRuleError('O tempo para finalizar este presente expirou')
+}
+
 export async function syncCompraStatusFromOrder(
   compra: CompraStatusRow,
   order: OrderResponse
 ): Promise<CompraStatus> {
   const nextStatus = resolvePagBankOrderStatus(order)
   if (!nextStatus || compra.status_pagamento === nextStatus) {
+    return compra.status_pagamento
+  }
+
+  if (compra.status_pagamento === 'Cancelado') {
     return compra.status_pagamento
   }
 
@@ -100,6 +137,14 @@ export async function syncCompraStatusFromOrder(
     where: { id: compra.id, status_pagamento: compra.status_pagamento },
     data: { status_pagamento: nextStatus },
   })
+
+  if (updated.count === 0) {
+    const current = await prisma.compras.findUnique({
+      where: { id: compra.id },
+      select: { status_pagamento: true },
+    })
+    return current?.status_pagamento ?? compra.status_pagamento
+  }
 
   if (updated.count > 0 && nextStatus === 'Rejeitado') {
     await returnStockOnce(compra).catch(() => {})
@@ -160,6 +205,9 @@ export class PagBankService {
     if (compra.status_pagamento === 'Rejeitado') {
       throw new ValidationError('Esta tentativa de pagamento ja foi encerrada')
     }
+    if (compra.status_pagamento === 'Cancelado') {
+      throw new ValidationError('Esta tentativa de pagamento foi cancelada')
+    }
 
     if (compra.pagbank_order_id) {
       const order = await getOrder(compra.pagbank_order_id)
@@ -167,11 +215,12 @@ export class PagBankService {
       return order
     }
 
+    const reservationExpiration = await requireActiveReservation(compra)
     const amountInCents = toCents(compra.valor_pago)
     ensureValidAmount(amountInCents)
 
     const phone = parsePhone(compra.telefone)
-    const expiration_date = new Date(Date.now() + 30 * 60 * 1000).toISOString()
+    const expiration_date = reservationExpiration.toISOString()
     const notification_urls = getNotificationUrls()
 
     const payload: CreateOrderInput = {
@@ -229,6 +278,9 @@ export class PagBankService {
     if (compra.status_pagamento === 'Rejeitado') {
       throw new ValidationError('Esta tentativa de pagamento ja foi encerrada')
     }
+    if (compra.status_pagamento === 'Cancelado') {
+      throw new ValidationError('Esta tentativa de pagamento foi cancelada')
+    }
 
     if (compra.pagbank_order_id) {
       const order = await getOrder(compra.pagbank_order_id)
@@ -236,6 +288,7 @@ export class PagBankService {
       return order
     }
 
+    await requireActiveReservation(compra)
     const amountInCents = toCents(compra.valor_pago)
     ensureValidAmount(amountInCents)
 
@@ -346,6 +399,10 @@ export class PagBankService {
 
     if (compra_status === 'Aprovado') {
       throw new ValidationError('Esta compra ja foi paga')
+    }
+
+    if (compra_status === 'Cancelado') {
+      return { compra_status: 'Cancelado' }
     }
 
     if (compra.pagbank_order_id && compra_status === 'Pendente') {

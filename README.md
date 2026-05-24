@@ -260,7 +260,21 @@ Todos os campos são opcionais:
 }
 ```
 
-**Status de pagamento:** `Pendente`, `Aprovado`, `Rejeitado`
+A resposta de criação inclui `reserva_expira_em` enquanto a compra permanecer `Pendente`, por exemplo:
+
+```json
+{
+  "status_pagamento": "Pendente",
+  "reserva_expira_em": "2026-05-24T12:10:00.000Z"
+}
+```
+
+**Status de pagamento:** `Pendente`, `Aprovado`, `Rejeitado`, `Cancelado`
+
+Uma compra pendente de item reserva o presente por 10 minutos. Se o pagamento
+não for concluído nesse prazo, o item volta a ficar disponível. O gestor pode
+marcar um presente como `Cancelado`, liberando o item sem permitir que um
+webhook posterior o reative.
 
 ---
 

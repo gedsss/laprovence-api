@@ -42,6 +42,7 @@ enum StatusPagamento {
   Pendente
   Aprovado
   Rejeitado
+  Cancelado
 }
 
 model user {
