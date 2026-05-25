@@ -39,6 +39,21 @@ Logs must mask or omit CPF, email, phone, tokens, cookies, authorization headers
 
 PagBank requests must avoid logging customer PII and card payloads. Webhooks must validate authenticity when the provider sends the signature header. Public checkout flows must use rate limiting and bot protection in homologation and production.
 
+## Implemented API Controls
+
+- Public list lookup returns display fields only; phone and ownership identifiers are not public.
+- Public gift availability returns only catalog item identifiers and payment status.
+- Checkout creates a random one-time access credential whose SHA-256 hash is stored; subsequent PagBank session, order, status, and cancellation calls require the credential in `X-Checkout-Token`.
+- Purchase history and CPF lookup require authentication and ownership or gestor authorization.
+- Catalog, preassembled-list, and administrative list mutations require the `gestor` role.
+- Web authentication is kept in an `HttpOnly`, `SameSite=Strict` session cookie; authenticated mutations require an explicit CSRF-protection header.
+- Third-party payment responses and unhandled stack traces are omitted from runtime logs and client errors.
+
+## Production Blockers
+
+- Define and execute retention, export, correction, and deletion procedures for LGPD data subject requests before retaining real customer records.
+- Deploy only behind HTTPS with `NODE_ENV=production`, an explicit `CORS_ORIGINS`, and `TRUST_PROXY` configured for the known reverse proxy hop count.
+
 ## Required Checks
 
 Every pull request should include:

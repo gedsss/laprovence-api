@@ -4,7 +4,7 @@ import { premontadaItensController } from './premontada_itens.controller.js'
 export async function premontadaItensRoutes(app: FastifyInstance) {
   app.post(
     '/premontada-itens',
-    { preHandler: [app.authenticate] },
+    { preHandler: [app.authenticate, app.requireGestor, app.requireCsrf] },
     async (request, reply) => {
       return premontadaItensController.addPremontadaItem(request, reply)
     }
@@ -16,7 +16,7 @@ export async function premontadaItensRoutes(app: FastifyInstance) {
 
   app.delete(
     '/premontada-itens/:premontada_id/:catalogo_id',
-    { preHandler: [app.authenticate] },
+    { preHandler: [app.authenticate, app.requireGestor, app.requireCsrf] },
     async (request, reply) => {
       return premontadaItensController.removePremontadaItem(request, reply)
     }

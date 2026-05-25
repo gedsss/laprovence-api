@@ -2,6 +2,22 @@ import type { FastifyInstance } from 'fastify'
 import { authController } from './auth.controller.js'
 
 export async function authRoutes(app: FastifyInstance) {
+  app.get(
+    '/session',
+    { preHandler: [app.authenticate] },
+    async (request, reply) => {
+      return authController.session(request, reply)
+    }
+  )
+
+  app.post(
+    '/logout',
+    { preHandler: [app.requireCsrf] },
+    async (request, reply) => {
+      return authController.logout(request, reply)
+    }
+  )
+
   app.post(
     '/login',
     {

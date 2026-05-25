@@ -5,6 +5,7 @@ import {
 } from '../../../errors/errors.js'
 import { prisma } from '../../../prisma/prismaClient.js'
 import { cacheDel, cacheDelPattern } from '../../lib/cache.js'
+import { createCheckoutAccessToken } from '../../lib/checkout-access.js'
 import { verifyRecaptchaToken } from '../../lib/recaptcha.js'
 import type {
   CreateComprasSchemaInput,
@@ -30,10 +31,21 @@ function toCents(value: string | { toString(): string }) {
 }
 
 function withReservationExpiration<
-  T extends { data_compra: Date; status_pagamento: string },
+  T extends {
+    data_compra: Date
+    status_pagamento: string
+    checkout_access_hash?: string | null
+    pagbank_order_id?: string | null
+  },
 >(compra: T) {
+  const {
+    checkout_access_hash: _checkoutAccessHash,
+    pagbank_order_id: _pagbankOrderId,
+    ...safeCompra
+  } = compra
+
   return {
-    ...compra,
+    ...safeCompra,
     reserva_expira_em:
       compra.status_pagamento === 'Pendente'
         ? new Date(
@@ -119,6 +131,7 @@ export class ComprasService {
       'checkout_start',
       'gift_confirm',
     ])
+    const checkoutAccess = createCheckoutAccessToken()
 
     const lista = await prisma.listas.findUnique({
       where: { id: data.listas_id },
@@ -196,6 +209,7 @@ export class ComprasService {
             valor_pago: valorPago,
             forma_pagamento: data.forma_pagamento,
             status_pagamento: data.status_pagamento,
+            checkout_access_hash: checkoutAccess.hash,
             is_new_gestor: data.is_new_gestor,
             is_new_noivo: data.is_new_noivo,
           },
@@ -206,7 +220,10 @@ export class ComprasService {
         await invalidateAvailability(data.listas_id, data.catalogo_id)
       }
 
-      return withReservationExpiration(compra)
+      return {
+        ...withReservationExpiration(compra),
+        checkout_access_token: checkoutAccess.token,
+      }
     } catch (err: any) {
       if (err instanceof BusinessRuleError || err instanceof ValidationError) {
         throw err
@@ -263,6 +280,18 @@ export class ComprasService {
       where: { listas_id },
     })
     return compras.map(withReservationExpiration)
+  }
+
+  async getDisponibilidadeByLista(listas_id: string) {
+    await releaseExpiredReservations({ listas_id })
+
+    return prisma.compras.findMany({
+      where: { listas_id },
+      select: {
+        catalogo_id: true,
+        status_pagamento: true,
+      },
+    })
   }
 
   async updateCompras(data: UpdateComprasSchemaDTO, id: string) {

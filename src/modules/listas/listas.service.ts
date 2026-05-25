@@ -53,12 +53,21 @@ export class ListasService {
   }
 
   async getListaByCodigo(codigo: string) {
-    const key = `listas:codigo:${codigo}`
+    const key = `listas:public:codigo:${codigo}`
     const cached = await cacheGet(key)
     if (cached) return cached
 
     const lista = await prisma.listas.findUnique({
       where: { codigo },
+      select: {
+        id: true,
+        codigo: true,
+        nome_noivos: true,
+        data_casamento: true,
+        foto_casal: true,
+        mensagem_boas_vindas: true,
+        status: true,
+      },
     })
 
     if (!lista) throw new NotFoundError('Erro ao encontrar a lista')
@@ -139,6 +148,7 @@ export class ListasService {
 
       if (existing?.codigo) {
         await cacheDel(`listas:codigo:${existing.codigo}`)
+        await cacheDel(`listas:public:codigo:${existing.codigo}`)
       }
 
       return lista
@@ -157,6 +167,7 @@ export class ListasService {
 
       if (existing?.codigo) {
         await cacheDel(`listas:codigo:${existing.codigo}`)
+        await cacheDel(`listas:public:codigo:${existing.codigo}`)
       }
 
       return { message: 'Sucesso ao deletar a lista' }

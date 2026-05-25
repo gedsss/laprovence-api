@@ -5,6 +5,7 @@ import {
   ValidationError,
 } from '../../errors/errors.js'
 import { prisma } from '../../prisma/prismaClient.js'
+import { requireCheckoutAccess } from '../lib/checkout-access.js'
 import { verifyRecaptchaToken } from '../lib/recaptcha.js'
 import {
   type CreateOrderInput,
@@ -202,7 +203,10 @@ function ensureValidAmount(amountInCents: number) {
 }
 
 export class PagBankService {
-  async createPixOrder({ compra_id, recaptcha_token }: CreatePixOrderInput) {
+  async createPixOrder(
+    { compra_id, recaptcha_token }: CreatePixOrderInput,
+    accessToken: string | undefined
+  ) {
     await verifyRecaptchaToken(recaptcha_token, 'pagbank_pix_order')
 
     const compra = await prisma.compras.findUnique({
@@ -211,6 +215,7 @@ export class PagBankService {
     })
 
     if (!compra) throw new NotFoundError('Compra')
+    requireCheckoutAccess(compra.checkout_access_hash, accessToken)
     if (!compra.email)
       throw new ValidationError(
         'E-mail do convidado e obrigatorio para pagamento'
@@ -272,10 +277,10 @@ export class PagBankService {
     return order
   }
 
-  async createThreeDsSession({
-    compra_id,
-    recaptcha_token,
-  }: CreateThreeDsSessionInput) {
+  async createThreeDsSession(
+    { compra_id, recaptcha_token }: CreateThreeDsSessionInput,
+    accessToken: string | undefined
+  ) {
     await verifyRecaptchaToken(recaptcha_token, 'pagbank_card_3ds_session')
 
     const compra = await prisma.compras.findUnique({
@@ -283,6 +288,7 @@ export class PagBankService {
     })
 
     if (!compra) throw new NotFoundError('Compra')
+    requireCheckoutAccess(compra.checkout_access_hash, accessToken)
     if (!compra.email)
       throw new ValidationError(
         'E-mail do convidado e obrigatorio para pagamento'
@@ -305,14 +311,17 @@ export class PagBankService {
     }
   }
 
-  async createCreditCardOrder({
-    compra_id,
-    installments,
-    card_encrypted,
-    card_holder_name,
-    authentication_id,
-    recaptcha_token,
-  }: CreateCreditCardOrderInput) {
+  async createCreditCardOrder(
+    {
+      compra_id,
+      installments,
+      card_encrypted,
+      card_holder_name,
+      authentication_id,
+      recaptcha_token,
+    }: CreateCreditCardOrderInput,
+    accessToken: string | undefined
+  ) {
     await verifyRecaptchaToken(recaptcha_token, 'pagbank_card_order')
 
     const compra = await prisma.compras.findUnique({
@@ -321,6 +330,7 @@ export class PagBankService {
     })
 
     if (!compra) throw new NotFoundError('Compra')
+    requireCheckoutAccess(compra.checkout_access_hash, accessToken)
     if (!compra.email)
       throw new ValidationError(
         'E-mail do convidado e obrigatorio para pagamento'
@@ -421,17 +431,18 @@ export class PagBankService {
     return order
   }
 
-  async getOrderStatus(compra_id: string): Promise<{
-    compra_status: string
-    pagbank_order: OrderResponse | null
-  }> {
+  async getOrderStatus(
+    compra_id: string,
+    accessToken: string | undefined
+  ): Promise<{ compra_status: string }> {
     const compra = await prisma.compras.findUnique({ where: { id: compra_id } })
     if (!compra) throw new NotFoundError('Compra')
+    requireCheckoutAccess(compra.checkout_access_hash, accessToken)
 
     let compra_status = compra.status_pagamento
 
     if (!compra.pagbank_order_id) {
-      return { compra_status, pagbank_order: null }
+      return { compra_status }
     }
 
     let pagbank_order: OrderResponse | null = null
@@ -442,12 +453,13 @@ export class PagBankService {
       // Retorna o status local se o PagBank estiver indisponivel.
     }
 
-    return { compra_status, pagbank_order }
+    return { compra_status }
   }
 
-  async cancelPendingOrder(compra_id: string) {
+  async cancelPendingOrder(compra_id: string, accessToken: string | undefined) {
     const compra = await prisma.compras.findUnique({ where: { id: compra_id } })
     if (!compra) throw new NotFoundError('Compra')
+    requireCheckoutAccess(compra.checkout_access_hash, accessToken)
 
     let compra_status = compra.status_pagamento
     if (compra.pagbank_order_id) {

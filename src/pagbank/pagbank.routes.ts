@@ -41,13 +41,17 @@ const checkoutRateLimit = {
 }
 
 export async function pagBankRoutes(app: FastifyInstance) {
-  app.get('/pagbank/public-key', async (request, reply) => {
-    return pagBankController.getPublicKey(request, reply)
-  })
+  app.get(
+    '/pagbank/public-key',
+    { config: { rateLimit: checkoutRateLimit } },
+    async (request, reply) => {
+      return pagBankController.getPublicKey(request, reply)
+    }
+  )
 
   app.post(
     '/pagbank/orders/pix',
-    { config: { rateLimit: checkoutRateLimit } },
+    { bodyLimit: 16 * 1024, config: { rateLimit: checkoutRateLimit } },
     async (request, reply) => {
       return pagBankController.createPixOrder(request, reply)
     }
@@ -55,7 +59,7 @@ export async function pagBankRoutes(app: FastifyInstance) {
 
   app.post(
     '/pagbank/orders/credit-card',
-    { config: { rateLimit: checkoutRateLimit } },
+    { bodyLimit: 32 * 1024, config: { rateLimit: checkoutRateLimit } },
     async (request, reply) => {
       return pagBankController.createCreditCardOrder(request, reply)
     }
@@ -63,24 +67,33 @@ export async function pagBankRoutes(app: FastifyInstance) {
 
   app.post(
     '/pagbank/3ds/session',
-    { config: { rateLimit: checkoutRateLimit } },
+    { bodyLimit: 8 * 1024, config: { rateLimit: checkoutRateLimit } },
     async (request, reply) => {
       return pagBankController.createThreeDsSession(request, reply)
     }
   )
 
-  app.get('/pagbank/orders/:compra_id/status', async (request, reply) => {
-    return pagBankController.getOrderStatus(request, reply)
-  })
+  app.get(
+    '/pagbank/orders/:compra_id/status',
+    { config: { rateLimit: checkoutRateLimit } },
+    async (request, reply) => {
+      return pagBankController.getOrderStatus(request, reply)
+    }
+  )
 
-  app.post('/pagbank/orders/:compra_id/cancel', async (request, reply) => {
-    return pagBankController.cancelOrder(request, reply)
-  })
+  app.post(
+    '/pagbank/orders/:compra_id/cancel',
+    { config: { rateLimit: checkoutRateLimit } },
+    async (request, reply) => {
+      return pagBankController.cancelOrder(request, reply)
+    }
+  )
 
   app.post(
     '/pagbank/webhook',
     {
       preParsing: captureRawBody as any,
+      bodyLimit: 128 * 1024,
       config: { rateLimit: { max: 120, timeWindow: '1 minute' } },
     },
     async (request, reply) => {

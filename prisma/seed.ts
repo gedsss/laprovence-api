@@ -3,9 +3,14 @@ import 'dotenv/config'
 import { prisma } from './prismaClient.js'
 
 async function main() {
-  const password = await bcrypt.hash('Gestor123', 10)
+  const seedPassword = process.env.SEED_GESTOR_PASSWORD
+  if (!seedPassword || seedPassword.length < 12) {
+    throw new Error('SEED_GESTOR_PASSWORD deve ter pelo menos 12 caracteres')
+  }
 
-  const gestor = await prisma.user.upsert({
+  const password = await bcrypt.hash(seedPassword, 10)
+
+  await prisma.user.upsert({
     where: { email: 'gestor@laprovence.com' },
     update: {
       nome_noiva: 'Gestora',
@@ -28,12 +33,12 @@ async function main() {
     },
   })
 
-  console.log('Gestor seed criado ou atualizado:', gestor.email)
+  console.log('Gestor seed criado ou atualizado')
 }
 
 main()
-  .catch(error => {
-    console.error(error)
+  .catch(() => {
+    console.error('Falha ao executar seed de gestor')
     process.exit(1)
   })
   .finally(async () => {

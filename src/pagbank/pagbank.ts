@@ -23,49 +23,6 @@ export function getPagBankSdkEnvironment(): 'PROD' | 'SANDBOX' {
   return env === 'production' ? 'PROD' : 'SANDBOX'
 }
 
-function extractErrorMessages(data: unknown): string[] {
-  if (!data || typeof data !== 'object') return []
-
-  const errorMessages = (data as { error_messages?: unknown }).error_messages
-  if (!Array.isArray(errorMessages)) return []
-
-  return errorMessages
-    .map(error => {
-      if (!error || typeof error !== 'object') return undefined
-      return (error as { description?: unknown }).description
-    })
-    .filter(
-      (description): description is string => typeof description === 'string'
-    )
-}
-
-function describeBody(body: unknown) {
-  if (!body || typeof body !== 'object') return undefined
-
-  const payload = body as {
-    reference_id?: string
-    qr_codes?: Array<{ amount?: { value?: number } }>
-    charges?: Array<{
-      amount?: { value?: number; currency?: string }
-      payment_method?: { type?: string; installments?: number }
-    }>
-    notification_urls?: string[]
-  }
-
-  const charge = payload.charges?.[0]
-  const qrCode = payload.qr_codes?.[0]
-
-  return {
-    reference_id: payload.reference_id,
-    payment_method:
-      charge?.payment_method?.type ?? (qrCode ? 'PIX' : undefined),
-    installments: charge?.payment_method?.installments,
-    amount: charge?.amount?.value ?? qrCode?.amount?.value,
-    currency: charge?.amount?.currency ?? 'BRL',
-    notification_urls: payload.notification_urls?.length ?? 0,
-  }
-}
-
 async function parseResponse(response: Response): Promise<unknown> {
   const text = await response.text()
   if (!text) return null
@@ -100,14 +57,7 @@ export async function pagbankRequest<T>(
     headers['x-idempotency-key'] = options.idempotencyKey
   }
 
-  if (body !== undefined) {
-    console.info(
-      '[PagBank req]',
-      method,
-      path,
-      JSON.stringify(describeBody(body))
-    )
-  }
+  console.info('[PagBank req]', method, path)
 
   let response: Response
   try {
@@ -126,11 +76,11 @@ export async function pagbankRequest<T>(
   const data = await parseResponse(response)
 
   if (!response.ok) {
-    const msgs = extractErrorMessages(data)
-    const detail = msgs.length > 0 ? msgs.join('; ') : `HTTP ${response.status}`
-
-    console.error('[PagBank res]', method, path, response.status, detail)
-    throw new ExternalServiceError('PagBank', new Error(detail))
+    console.error('[PagBank res]', method, path, response.status)
+    throw new ExternalServiceError(
+      'PagBank',
+      new Error(`HTTP ${response.status}`)
+    )
   }
 
   return data as T
@@ -168,10 +118,11 @@ export async function pagbankSdkRequest<T>(
 
   const data = await parseResponse(response)
   if (!response.ok) {
-    const msgs = extractErrorMessages(data)
-    const detail = msgs.length > 0 ? msgs.join('; ') : `HTTP ${response.status}`
-    console.error('[PagBank 3DS res]', method, path, response.status, detail)
-    throw new ExternalServiceError('PagBank 3DS', new Error(detail))
+    console.error('[PagBank 3DS res]', method, path, response.status)
+    throw new ExternalServiceError(
+      'PagBank 3DS',
+      new Error(`HTTP ${response.status}`)
+    )
   }
 
   return data as T

@@ -60,13 +60,14 @@ O servidor ficará disponível em `http://localhost:3333`.
 
 ## Autenticação
 
-As rotas protegidas exigem um token JWT no header da requisição:
+O login cria uma sessão JWT no cookie `lp_session`, configurado como
+`HttpOnly` e `SameSite=Strict` (`Secure` em produção). Rotas protegidas recebem
+o cookie automaticamente pelo navegador. Operações autenticadas de escrita
+devem enviar também:
 
 ```
-Authorization: Bearer <token>
+X-CSRF-Protection: 1
 ```
-
-O token é obtido pela rota `POST /login`.
 
 ---
 
@@ -77,6 +78,8 @@ O token é obtido pela rota `POST /login`.
 | Método | Rota | Autenticação | Descrição |
 |--------|------|:---:|-----------|
 | POST | `/login` | ❌ | Login do usuário (limite: 5 req/min) |
+| GET | `/session` | ✅ | Restaurar usuário da sessão |
+| POST | `/logout` | Cookie/CSRF | Encerrar sessão |
 | POST | `/forgot-password` | ❌ | Solicitar redefinição de senha |
 | POST | `/reset-password` | ❌ | Redefinir senha com token |
 
@@ -241,8 +244,9 @@ Todos os campos são opcionais:
 |--------|------|:---:|-----------|
 | POST | `/compras` | ❌ | Iniciar reserva pública para pagamento |
 | GET | `/compras/:id` | ✅ | Buscar compra por ID |
-| GET | `/compras/cpf/:cpf` | ✅ | Buscar compras por CPF do convidado |
-| GET | `/compras/lista/:lista` | ❌ | Listar compras de uma lista |
+| GET | `/compras/cpf/:cpf` | Gestor | Buscar compras por CPF do convidado |
+| GET | `/compras/lista/:lista/disponibilidade` | ❌ | Consultar apenas itens/status públicos |
+| GET | `/compras/lista/:lista` | ✅ | Listar compras da lista autorizada |
 | PUT | `/compras/:id` | ✅ | Atualizar compra |
 | DELETE | `/compras/:id` | ✅ | Deletar compra |
 
@@ -261,11 +265,15 @@ Todos os campos são opcionais:
 }
 ```
 
-A resposta de criação inclui `reserva_expira_em` enquanto a compra permanecer `Pendente`, por exemplo:
+A resposta de criação inclui a credencial efêmera `checkout_access_token`, que
+deve permanecer apenas na memória do navegador e acompanhar as chamadas
+PagBank da tentativa em `X-Checkout-Token`. O token não é recuperável depois
+da resposta inicial.
 
 ```json
 {
-  "status_pagamento": "Pendente",
+  "id": "uuid-da-compra",
+  "checkout_access_token": "token-efemero",
   "reserva_expira_em": "2026-05-24T12:10:00.000Z"
 }
 ```
@@ -296,7 +304,8 @@ representam cartão-presente e exigem valor mínimo de `R$ 200,00`.
 | POST | `/pagbank/webhook` | ❌ | Receber notificação assinada do PagBank |
 
 As rotas públicas de pagamento têm rate limit e devem usar reCAPTCHA v3 em
-homologação e produção. O fluxo de cartão é:
+homologação e produção. Exceto a chave pública e o webhook, elas exigem
+`X-Checkout-Token` gerado em `POST /compras`. O fluxo de cartão é:
 
 1. O frontend cria uma compra pendente e coleta os dados do cartão e o endereço de cobrança.
 2. O cartão é criptografado no navegador pelo SDK PagBank.
@@ -377,16 +386,18 @@ Todos os erros seguem o formato:
 }
 ```
 
-Erros de aplicação incluem adicionalmente:
+Erros de aplicação podem incluir um código estável:
 
 ```json
 {
   "success": false,
   "code": "CODIGO_DO_ERRO",
-  "message": "Descrição do erro",
-  "details": {}
+  "message": "Descrição do erro"
 }
 ```
+
+Detalhes estruturados são retornados apenas para falhas de validação de
+entrada; erros internos e respostas de terceiros não são expostos.
 
 | Status | Descrição |
 |--------|-----------|

@@ -24,3 +24,15 @@ The project must support a manual operational process for access, correction, ex
 
 PagBank receives only the data necessary to process payments. Secrets and credentials must never be shared in issue comments, prompts, pull requests, logs, or screenshots.
 
+## Technical Controls Applied
+
+- Public browsing no longer exposes purchaser name, CPF, email, phone, or payment order identifiers.
+- Payment operations after reservation require an ephemeral checkout token stored only as a hash by the API.
+- Authenticated personal and purchase records are restricted to the record owner or the gestor role.
+- Login state is carried by an `HttpOnly`, `SameSite=Strict` cookie rather than browser-readable token storage, with a CSRF header required for authenticated changes.
+- Runtime logging redacts authentication/payment fields and avoids PagBank response contents.
+
+## Pending Before Production
+
+Define operational retention and LGPD data subject procedures, and publish the application only through HTTPS with restricted CORS and secure production cookie settings.
+
