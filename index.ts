@@ -153,8 +153,13 @@ fastify.setErrorHandler((error: FastifyError | AppError, _request, reply) => {
   })
 })
 
+// Em producao, exponha a API apenas atraves do proxy reverso.
+const listenHost =
+  process.env.HOST?.trim() ||
+  (process.env.NODE_ENV === 'production' ? '127.0.0.1' : '0.0.0.0')
+
 // Iniciar servidor
-fastify.listen({ port: 3668, host: '0.0.0.0' }, (err, address) => {
+fastify.listen({ port: 3668, host: listenHost }, (err, address) => {
   if (err) {
     fastify.log.error('Falha ao iniciar servidor')
     process.exit(1)
