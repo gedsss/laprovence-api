@@ -5,13 +5,23 @@ const URLS = {
   production: 'https://api.pagseguro.com',
 } as const
 
+const SDK_URLS = {
+  sandbox: 'https://sandbox.sdk.pagseguro.com',
+  production: 'https://sdk.pagseguro.com',
+} as const
+
 export type PagBankRequestOptions = {
   idempotencyKey?: string
 }
 
 const env = process.env.PAGBANK_ENV === 'production' ? 'production' : 'sandbox'
 const BASE_URL = URLS[env]
+const SDK_BASE_URL = SDK_URLS[env]
 const TOKEN = process.env.PAGBANK_TOKEN
+
+export function getPagBankSdkEnvironment(): 'PROD' | 'SANDBOX' {
+  return env === 'production' ? 'PROD' : 'SANDBOX'
+}
 
 function extractErrorMessages(data: unknown): string[] {
   if (!data || typeof data !== 'object') return []
@@ -24,7 +34,9 @@ function extractErrorMessages(data: unknown): string[] {
       if (!error || typeof error !== 'object') return undefined
       return (error as { description?: unknown }).description
     })
-    .filter((description): description is string => typeof description === 'string')
+    .filter(
+      (description): description is string => typeof description === 'string'
+    )
 }
 
 function describeBody(body: unknown) {
@@ -45,7 +57,8 @@ function describeBody(body: unknown) {
 
   return {
     reference_id: payload.reference_id,
-    payment_method: charge?.payment_method?.type ?? (qrCode ? 'PIX' : undefined),
+    payment_method:
+      charge?.payment_method?.type ?? (qrCode ? 'PIX' : undefined),
     installments: charge?.payment_method?.installments,
     amount: charge?.amount?.value ?? qrCode?.amount?.value,
     currency: charge?.amount?.currency ?? 'BRL',
@@ -71,7 +84,10 @@ export async function pagbankRequest<T>(
   options: PagBankRequestOptions = {}
 ): Promise<T> {
   if (!TOKEN) {
-    throw new ExternalServiceError('PagBank', new Error('PAGBANK_TOKEN nao configurado'))
+    throw new ExternalServiceError(
+      'PagBank',
+      new Error('PAGBANK_TOKEN nao configurado')
+    )
   }
 
   const headers: Record<string, string> = {
@@ -85,7 +101,12 @@ export async function pagbankRequest<T>(
   }
 
   if (body !== undefined) {
-    console.info('[PagBank req]', method, path, JSON.stringify(describeBody(body)))
+    console.info(
+      '[PagBank req]',
+      method,
+      path,
+      JSON.stringify(describeBody(body))
+    )
   }
 
   let response: Response
@@ -96,7 +117,10 @@ export async function pagbankRequest<T>(
       ...(body !== undefined && { body: JSON.stringify(body) }),
     })
   } catch (err) {
-    throw new ExternalServiceError('PagBank', err instanceof Error ? err : undefined)
+    throw new ExternalServiceError(
+      'PagBank',
+      err instanceof Error ? err : undefined
+    )
   }
 
   const data = await parseResponse(response)
@@ -107,6 +131,47 @@ export async function pagbankRequest<T>(
 
     console.error('[PagBank res]', method, path, response.status, detail)
     throw new ExternalServiceError('PagBank', new Error(detail))
+  }
+
+  return data as T
+}
+
+export async function pagbankSdkRequest<T>(
+  method: string,
+  path: string,
+  body?: unknown
+): Promise<T> {
+  if (!TOKEN) {
+    throw new ExternalServiceError(
+      'PagBank',
+      new Error('PAGBANK_TOKEN nao configurado')
+    )
+  }
+
+  let response: Response
+  try {
+    response = await fetch(`${SDK_BASE_URL}${path}`, {
+      method,
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      ...(body !== undefined && { body: JSON.stringify(body) }),
+    })
+  } catch (err) {
+    throw new ExternalServiceError(
+      'PagBank 3DS',
+      err instanceof Error ? err : undefined
+    )
+  }
+
+  const data = await parseResponse(response)
+  if (!response.ok) {
+    const msgs = extractErrorMessages(data)
+    const detail = msgs.length > 0 ? msgs.join('; ') : `HTTP ${response.status}`
+    console.error('[PagBank 3DS res]', method, path, response.status, detail)
+    throw new ExternalServiceError('PagBank 3DS', new Error(detail))
   }
 
   return data as T

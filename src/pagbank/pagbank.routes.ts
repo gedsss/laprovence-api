@@ -1,5 +1,5 @@
-import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import { Readable } from 'node:stream'
+import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import { pagBankController } from './pagbank.controller.js'
 
 type RawBodyRequest = FastifyRequest & { rawBody?: string }
@@ -21,14 +21,17 @@ function captureRawBody(
     ;(request as RawBodyRequest).rawBody = rawBody.toString('utf8')
 
     const stream = Readable.from(rawBody)
-    ;(stream as Readable & { receivedEncodedLength?: number }).receivedEncodedLength =
-      rawBody.length
+    ;(
+      stream as Readable & { receivedEncodedLength?: number }
+    ).receivedEncodedLength = rawBody.length
 
     done(null, stream)
   })
 
   payload.on('error', err => {
-    done(err instanceof Error ? err : new Error('Erro ao ler webhook do PagBank'))
+    done(
+      err instanceof Error ? err : new Error('Erro ao ler webhook do PagBank')
+    )
   })
 }
 
@@ -58,6 +61,14 @@ export async function pagBankRoutes(app: FastifyInstance) {
     }
   )
 
+  app.post(
+    '/pagbank/3ds/session',
+    { config: { rateLimit: checkoutRateLimit } },
+    async (request, reply) => {
+      return pagBankController.createThreeDsSession(request, reply)
+    }
+  )
+
   app.get('/pagbank/orders/:compra_id/status', async (request, reply) => {
     return pagBankController.getOrderStatus(request, reply)
   })
@@ -68,7 +79,10 @@ export async function pagBankRoutes(app: FastifyInstance) {
 
   app.post(
     '/pagbank/webhook',
-    { preParsing: captureRawBody as any, config: { rateLimit: { max: 120, timeWindow: '1 minute' } } },
+    {
+      preParsing: captureRawBody as any,
+      config: { rateLimit: { max: 120, timeWindow: '1 minute' } },
+    },
     async (request, reply) => {
       return pagBankController.webhook(request as RawBodyRequest, reply)
     }

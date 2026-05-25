@@ -239,7 +239,7 @@ Todos os campos são opcionais:
 
 | Método | Rota | Autenticação | Descrição |
 |--------|------|:---:|-----------|
-| POST | `/compras` | ✅ | Registrar uma compra |
+| POST | `/compras` | ❌ | Iniciar reserva pública para pagamento |
 | GET | `/compras/:id` | ✅ | Buscar compra por ID |
 | GET | `/compras/cpf/:cpf` | ✅ | Buscar compras por CPF do convidado |
 | GET | `/compras/lista/:lista` | ❌ | Listar compras de uma lista |
@@ -252,9 +252,10 @@ Todos os campos são opcionais:
   "listas_id": "uuid-da-lista",
   "catalogo_id": "uuid-do-item-catalogo",
   "nome_convidado": "João Souza",
+  "email": "joao@example.com",
   "cpf": "12345678901",
   "telefone": "11977777777",
-  "valor_pago": 450.00,
+  "valor_pago": "450.00",
   "forma_pagamento": "PIX",
   "status_pagamento": "Pendente"
 }
@@ -275,6 +276,50 @@ Uma compra pendente de item reserva o presente por 10 minutos. Se o pagamento
 não for concluído nesse prazo, o item volta a ficar disponível. O gestor pode
 marcar um presente como `Cancelado`, liberando o item sem permitir que um
 webhook posterior o reative.
+
+Para itens do catálogo, a API confere `valor_pago` contra o preço vigente antes
+de reservar; valores alterados no navegador são recusados. Compras sem item
+representam cartão-presente e exigem valor mínimo de `R$ 200,00`.
+
+---
+
+### PagBank: Pix e Cartão com 3DS
+
+| Método | Rota | Autenticação | Descrição |
+|--------|------|:---:|-----------|
+| GET | `/pagbank/public-key` | ❌ | Obter chave pública para criptografia do cartão |
+| POST | `/pagbank/orders/pix` | ❌ | Criar pedido Pix para uma compra reservada |
+| POST | `/pagbank/3ds/session` | ❌ | Criar sessão 3DS para uma compra reservada |
+| POST | `/pagbank/orders/credit-card` | ❌ | Cobrar cartão após autenticação 3DS concluída |
+| GET | `/pagbank/orders/:compra_id/status` | ❌ | Sincronizar/consultar status do pagamento |
+| POST | `/pagbank/orders/:compra_id/cancel` | ❌ | Cancelar tentativa pendente |
+| POST | `/pagbank/webhook` | ❌ | Receber notificação assinada do PagBank |
+
+As rotas públicas de pagamento têm rate limit e devem usar reCAPTCHA v3 em
+homologação e produção. O fluxo de cartão é:
+
+1. O frontend cria uma compra pendente e coleta os dados do cartão e o endereço de cobrança.
+2. O cartão é criptografado no navegador pelo SDK PagBank.
+3. O frontend chama `/pagbank/3ds/session`; a API cria uma sessão válida por até 30 minutos.
+4. O frontend executa `PagSeguro.setUp(...)` e `PagSeguro.authenticate3DS(...)`.
+5. Apenas com `AUTH_FLOW_COMPLETED` e um `id` de autenticação, o frontend envia a cobrança.
+6. A API inclui `payment_method.authentication_method` com `type: "THREEDS"` e o `id` recebido.
+
+Cartões que não suportem 3DS ou tenham a autenticação recusada não são cobrados
+por esta aplicação; o convidado deve utilizar outro cartão ou Pix. O endereço
+de cobrança é utilizado no navegador para a autenticação 3DS e não é persistido
+pela API.
+
+#### Requisitos de Produção
+
+- Configure `PAGBANK_ENV="production"`, `PAGBANK_TOKEN` de produção e uma chave Pix ativa na conta PagBank.
+- Configure `PAGBANK_WEBHOOK_URL` em HTTPS e mantenha `PAGBANK_WEBHOOK_SIGNATURE_REQUIRED="true"`.
+- Configure `RECAPTCHA_SECRET_KEY` e a correspondente `VITE_RECAPTCHA_SITE_KEY` no frontend.
+- Sirva o frontend em HTTPS e restrinja `CORS_ORIGINS` ao domínio publicado.
+- Caso exista Content Security Policy no proxy/frontend, permita o SDK de `https://assets.pagseguro.com.br` e frames/scripts necessários dos domínios `*.cardinalcommerce.com` e `*.cardinaltrusted.com`.
+
+Para sandbox, use os cartões, valores e cenários descritos na documentação
+oficial do PagBank para 3DS; não utilize cartão real.
 
 ---
 

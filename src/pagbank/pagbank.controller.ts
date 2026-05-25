@@ -3,11 +3,15 @@ import {
   CancelOrderSchema,
   CreateCreditCardOrderSchema,
   CreatePixOrderSchema,
+  CreateThreeDsSessionSchema,
   GetOrderStatusSchema,
 } from './pagbank.schema.js'
 import { pagBankService } from './pagbank.service.js'
-import { PAGBANK_SIGNATURE_HEADER, validatePagBankWebhookSignature } from './webhook-auth.js'
 import { processWebhook } from './webhook.js'
+import {
+  PAGBANK_SIGNATURE_HEADER,
+  validatePagBankWebhookSignature,
+} from './webhook-auth.js'
 
 type WebhookRequest = FastifyRequest & { rawBody?: string }
 
@@ -22,6 +26,12 @@ export class PagBankController {
     const data = CreateCreditCardOrderSchema.parse(request.body)
     const order = await pagBankService.createCreditCardOrder(data)
     return reply.status(201).send({ success: true, data: order })
+  }
+
+  async createThreeDsSession(request: FastifyRequest, reply: FastifyReply) {
+    const data = CreateThreeDsSessionSchema.parse(request.body)
+    const session = await pagBankService.createThreeDsSession(data)
+    return reply.status(201).send({ success: true, data: session })
   }
 
   async getOrderStatus(request: FastifyRequest, reply: FastifyReply) {
@@ -53,9 +63,13 @@ export class PagBankController {
       return reply.status(401).send()
     }
 
-    const payload = request.body as { id?: string; reference_id?: string } | undefined
+    const payload = request.body as
+      | { id?: string; reference_id?: string }
+      | undefined
     if (!payload?.id) {
-      return reply.status(400).send({ success: false, message: 'Payload invalido' })
+      return reply
+        .status(400)
+        .send({ success: false, message: 'Payload invalido' })
     }
 
     processWebhook(payload).catch(error => {

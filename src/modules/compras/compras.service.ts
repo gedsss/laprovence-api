@@ -15,6 +15,7 @@ export interface CreateComprasSchemaDTO extends CreateComprasSchemaInput {}
 export interface UpdateComprasSchemaDTO extends UpdateComprasSchemaInput {}
 
 export const RESERVATION_DURATION_MS = 10 * 60 * 1000
+const GIFT_CREDIT_MIN_VALUE_CENTS = 20000
 
 type CompraStatus = 'Pendente' | 'Aprovado' | 'Rejeitado' | 'Cancelado'
 
@@ -24,19 +25,28 @@ type ReservationTarget = {
   catalogo_id: string | null
 }
 
-function withReservationExpiration<T extends { data_compra: Date; status_pagamento: string }>(
-  compra: T
-) {
+function toCents(value: string | { toString(): string }) {
+  return Math.round(Number(value.toString()) * 100)
+}
+
+function withReservationExpiration<
+  T extends { data_compra: Date; status_pagamento: string },
+>(compra: T) {
   return {
     ...compra,
     reserva_expira_em:
       compra.status_pagamento === 'Pendente'
-        ? new Date(compra.data_compra.getTime() + RESERVATION_DURATION_MS).toISOString()
+        ? new Date(
+            compra.data_compra.getTime() + RESERVATION_DURATION_MS
+          ).toISOString()
         : null,
   }
 }
 
-async function invalidateAvailability(listasId: string, catalogoId: string | null) {
+async function invalidateAvailability(
+  listasId: string,
+  catalogoId: string | null
+) {
   const changes: Promise<void>[] = [cacheDel(`lista_itens:lista:${listasId}`)]
   if (catalogoId) {
     changes.push(
@@ -116,25 +126,43 @@ export class ComprasService {
     if (!lista) throw new ValidationError('ID de lista inválido')
 
     if (data.catalogo_id) {
-      const itemNaLista = await prisma.lista_itens.findFirst({
-        where: {
-          listas_id: data.listas_id,
-          catalogo_id: data.catalogo_id,
-        },
-      })
-      if (!itemNaLista) {
-        throw new ValidationError('Item não pertence a esta lista')
-      }
-
       await releaseExpiredReservations({
         listas_id: data.listas_id,
         catalogo_id: data.catalogo_id,
       })
+    } else if (toCents(data.valor_pago) < GIFT_CREDIT_MIN_VALUE_CENTS) {
+      throw new BusinessRuleError(
+        'O valor mínimo do cartão presente é R$ 200,00'
+      )
     }
 
     try {
       const compra = await prisma.$transaction(async tx => {
+        let valorPago = data.valor_pago
+
         if (data.catalogo_id) {
+          const itemNaLista = await tx.lista_itens.findFirst({
+            where: {
+              listas_id: data.listas_id,
+              catalogo_id: data.catalogo_id,
+            },
+            select: {
+              catalogo: {
+                select: { preco: true },
+              },
+            },
+          })
+          if (!itemNaLista) {
+            throw new ValidationError('Item não pertence a esta lista')
+          }
+
+          valorPago = itemNaLista.catalogo.preco.toString()
+          if (toCents(data.valor_pago) !== toCents(valorPago)) {
+            throw new BusinessRuleError(
+              'O valor deste item foi atualizado. Recarregue a lista e tente novamente'
+            )
+          }
+
           const existing = await tx.compras.findFirst({
             where: {
               listas_id: data.listas_id,
@@ -165,7 +193,7 @@ export class ComprasService {
             email: data.email ?? null,
             cpf: data.cpf,
             telefone: data.telefone,
-            valor_pago: data.valor_pago,
+            valor_pago: valorPago,
             forma_pagamento: data.forma_pagamento,
             status_pagamento: data.status_pagamento,
             is_new_gestor: data.is_new_gestor,
@@ -212,7 +240,9 @@ export class ComprasService {
       select: { id: true },
     })
     await Promise.all(
-      comprasPendentes.map(compra => releaseExpiredReservations({ id: compra.id }))
+      comprasPendentes.map(compra =>
+        releaseExpiredReservations({ id: compra.id })
+      )
     )
 
     const compras = await prisma.compras.findMany({
@@ -245,7 +275,9 @@ export class ComprasService {
       data.status_pagamento &&
       data.status_pagamento !== compraAtual.status_pagamento
     ) {
-      throw new ValidationError('Uma tentativa encerrada não pode ter o status alterado')
+      throw new ValidationError(
+        'Uma tentativa encerrada não pode ter o status alterado'
+      )
     }
 
     const updateData = {
@@ -269,7 +301,7 @@ export class ComprasService {
       }),
     }
 
-    let compra
+    let compra = compraAtual
     try {
       if (data.status_pagamento === 'Cancelado') {
         compra = await prisma.$transaction(async tx => {
@@ -309,7 +341,10 @@ export class ComprasService {
       compraAtual.status_pagamento !== 'Rejeitado' &&
       compraAtual.status_pagamento !== 'Cancelado'
     ) {
-      await invalidateAvailability(compraAtual.listas_id, compraAtual.catalogo_id)
+      await invalidateAvailability(
+        compraAtual.listas_id,
+        compraAtual.catalogo_id
+      )
     }
 
     return withReservationExpiration(compra)

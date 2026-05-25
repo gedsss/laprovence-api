@@ -1,19 +1,26 @@
 import { createHash } from 'node:crypto'
-import { BusinessRuleError, NotFoundError, ValidationError } from '../../errors/errors.js'
+import {
+  BusinessRuleError,
+  NotFoundError,
+  ValidationError,
+} from '../../errors/errors.js'
 import { prisma } from '../../prisma/prismaClient.js'
 import { verifyRecaptchaToken } from '../lib/recaptcha.js'
 import {
+  type CreateOrderInput,
+  type CreditCardCharge,
   createOrder,
   getOrder,
   getPublicKey,
-  type CreateOrderInput,
-  type CreditCardCharge,
   type OrderResponse,
   type PagBankPhone,
+  createThreeDsSession as requestThreeDsSession,
 } from './order.js'
+import { getPagBankSdkEnvironment } from './pagbank.js'
 import type {
   CreateCreditCardOrderInput,
   CreatePixOrderInput,
+  CreateThreeDsSessionInput,
 } from './pagbank.schema.js'
 
 function toCents(value: { toString(): string }): number {
@@ -71,7 +78,9 @@ function getRawOrderStatus(order: OrderResponse): string | undefined {
   return qrCode.status
 }
 
-export function resolvePagBankOrderStatus(order: OrderResponse): CompraStatus | undefined {
+export function resolvePagBankOrderStatus(
+  order: OrderResponse
+): CompraStatus | undefined {
   const rawStatus = getRawOrderStatus(order)
   return rawStatus ? STATUS_MAP[rawStatus] : undefined
 }
@@ -89,7 +98,9 @@ async function requireActiveReservation(
   compra: CompraStatusRow & { data_compra: Date }
 ) {
   if (compra.status_pagamento !== 'Pendente') {
-    throw new BusinessRuleError('Esta tentativa de pagamento nao esta mais ativa')
+    throw new BusinessRuleError(
+      'Esta tentativa de pagamento nao esta mais ativa'
+    )
   }
 
   const active = await prisma.compras.findFirst({
@@ -97,7 +108,9 @@ async function requireActiveReservation(
     select: { id: true },
   })
   if (!active) {
-    throw new BusinessRuleError('Esta tentativa de pagamento nao esta mais ativa')
+    throw new BusinessRuleError(
+      'Esta tentativa de pagamento nao esta mais ativa'
+    )
   }
 
   const expiration = new Date(
@@ -198,7 +211,10 @@ export class PagBankService {
     })
 
     if (!compra) throw new NotFoundError('Compra')
-    if (!compra.email) throw new ValidationError('E-mail do convidado e obrigatorio para pagamento')
+    if (!compra.email)
+      throw new ValidationError(
+        'E-mail do convidado e obrigatorio para pagamento'
+      )
     if (compra.status_pagamento === 'Aprovado') {
       throw new ValidationError('Esta compra ja foi paga')
     }
@@ -256,11 +272,45 @@ export class PagBankService {
     return order
   }
 
+  async createThreeDsSession({
+    compra_id,
+    recaptcha_token,
+  }: CreateThreeDsSessionInput) {
+    await verifyRecaptchaToken(recaptcha_token, 'pagbank_card_3ds_session')
+
+    const compra = await prisma.compras.findUnique({
+      where: { id: compra_id },
+    })
+
+    if (!compra) throw new NotFoundError('Compra')
+    if (!compra.email)
+      throw new ValidationError(
+        'E-mail do convidado e obrigatorio para pagamento'
+      )
+    if (compra.pagbank_order_id) {
+      throw new BusinessRuleError('O pagamento desta compra ja foi iniciado')
+    }
+
+    await requireActiveReservation(compra)
+
+    const result = await requestThreeDsSession()
+    if (!result.session) {
+      throw new ValidationError('Nao foi possivel iniciar a autenticacao 3DS')
+    }
+
+    return {
+      session: result.session,
+      expires_at: result.expires_at,
+      environment: getPagBankSdkEnvironment(),
+    }
+  }
+
   async createCreditCardOrder({
     compra_id,
     installments,
     card_encrypted,
     card_holder_name,
+    authentication_id,
     recaptcha_token,
   }: CreateCreditCardOrderInput) {
     await verifyRecaptchaToken(recaptcha_token, 'pagbank_card_order')
@@ -271,7 +321,10 @@ export class PagBankService {
     })
 
     if (!compra) throw new NotFoundError('Compra')
-    if (!compra.email) throw new ValidationError('E-mail do convidado e obrigatorio para pagamento')
+    if (!compra.email)
+      throw new ValidationError(
+        'E-mail do convidado e obrigatorio para pagamento'
+      )
     if (compra.status_pagamento === 'Aprovado') {
       throw new ValidationError('Esta compra ja foi paga')
     }
@@ -291,6 +344,11 @@ export class PagBankService {
     await requireActiveReservation(compra)
     const amountInCents = toCents(compra.valor_pago)
     ensureValidAmount(amountInCents)
+    if (amountInCents < 100) {
+      throw new ValidationError(
+        'Pagamento com cartao exige valor minimo de R$ 1,00'
+      )
+    }
 
     if (installments > 1 && amountInCents <= 100000) {
       throw new BusinessRuleError(
@@ -316,6 +374,10 @@ export class PagBankService {
         holder: {
           name: card_holder_name,
           tax_id: compra.cpf,
+        },
+        authentication_method: {
+          type: 'THREEDS',
+          id: authentication_id,
         },
       },
     }

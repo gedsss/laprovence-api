@@ -1,4 +1,4 @@
-import { pagbankRequest } from './pagbank.js'
+import { pagbankRequest, pagbankSdkRequest } from './pagbank.js'
 
 export interface PagBankCustomer {
   name: string
@@ -43,6 +43,10 @@ export interface CreditCardCharge {
     holder: {
       name: string
       tax_id?: string
+    }
+    authentication_method: {
+      type: 'THREEDS'
+      id: string
     }
   }
 }
@@ -104,6 +108,11 @@ export interface PublicKeyResponse {
   version?: string
 }
 
+export interface ThreeDsSessionResponse {
+  session: string
+  expires_at?: string
+}
+
 export async function createOrder(
   input: CreateOrderInput,
   idempotencyKey?: string
@@ -122,4 +131,11 @@ export async function getOrder(orderId: string): Promise<OrderResponse> {
 
 export async function getPublicKey(): Promise<PublicKeyResponse> {
   return pagbankRequest<PublicKeyResponse>('GET', '/public-keys/card')
+}
+
+export async function createThreeDsSession(): Promise<ThreeDsSessionResponse> {
+  return pagbankSdkRequest<ThreeDsSessionResponse>(
+    'POST',
+    '/checkout-sdk/sessions'
+  )
 }
