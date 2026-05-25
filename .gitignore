@@ -1,6 +1,13 @@
 node_modules
 # Keep environment variables out of version control
 .env
+.env.local
+.env.*.local
+
+# Local agent settings and runtime logs
+.claude/settings.json
+*.log
+server*.log
 
 /generated/prisma
 

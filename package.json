@@ -6,7 +6,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "tsx watch index.ts",
-    "seed": "prisma db seed"
+    "seed": "prisma db seed",
+    "typecheck": "tsc --noEmit",
+    "security:audit": "npm audit --audit-level=high"
   },
   "author": "",
   "license": "ISC",

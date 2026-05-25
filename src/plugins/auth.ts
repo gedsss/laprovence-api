@@ -7,11 +7,10 @@ export default fp(async function authPlugin(fastify) {
     async (request: FastifyRequest, reply: FastifyReply) => {
       try {
         await request.jwtVerify()
-      } catch (err: any) {
+      } catch {
         return reply.status(401).send({
           success: false,
           message: 'Token inválido ou ausente',
-          err,
         })
       }
     }

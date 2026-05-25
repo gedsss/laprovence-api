@@ -11,6 +11,9 @@ import jwt from 'jsonwebtoken'
 
 export interface CreateLoginSchemaDTO extends CreateLoginInput {}
 
+const PASSWORD_RESET_MESSAGE =
+  'Se o email existir, um link de recuperacao foi enviado'
+
 export class AuthService {
   async login(email: string, password: string) {
     const user = await prisma.user.findUnique({
@@ -23,19 +26,18 @@ export class AuthService {
 
     if (!passwordCorreta) throw new InvalidCredentialsError()
 
-    const token = jwt.sign(
-      { sub: user.id, email: user.email },
-      process.env.JWT_PASS ?? '',
-      {
-        expiresIn: '8h',
-      }
-    )
+    const secret = process.env.JWT_PASS
+    if (!secret) throw new Error('JWT_PASS nao configurado')
+
+    const token = jwt.sign({ sub: user.id, email: user.email }, secret, {
+      expiresIn: '8h',
+    })
 
     const { password: _, ...userLogin } = user
 
     return {
       user: userLogin,
-      token: token,
+      token,
     }
   }
 
@@ -44,10 +46,10 @@ export class AuthService {
       where: { email },
     })
 
-    // resposta genérica por segurança
+    // Resposta generica para evitar enumeracao de contas.
     if (!existingUser) {
       return {
-        message: 'Se o email existir, um link de recuperação foi enviado',
+        message: PASSWORD_RESET_MESSAGE,
       }
     }
 
@@ -58,7 +60,7 @@ export class AuthService {
       .update(rawToken)
       .digest('hex')
 
-    const expires = new Date(Date.now() + 1000 * 60 * 15) // 15 min
+    const expires = new Date(Date.now() + 1000 * 60 * 15)
 
     await prisma.user.update({
       where: { id: existingUser.id },
@@ -68,10 +70,18 @@ export class AuthService {
       },
     })
 
-    return {
-      message: 'Se o email existir, um link de recuperação foi enviado',
-      token: rawToken, // só para teste local
+    const response: { message: string; token?: string } = {
+      message: PASSWORD_RESET_MESSAGE,
     }
+
+    if (
+      process.env.ALLOW_PASSWORD_RESET_TOKEN_RESPONSE === 'true' &&
+      process.env.NODE_ENV !== 'production'
+    ) {
+      response.token = rawToken
+    }
+
+    return response
   }
 
   async resetPassword(token: string, password: string) {
@@ -84,7 +94,7 @@ export class AuthService {
     })
 
     if (!existingUser) {
-      throw new NotFoundError('Token inválido')
+      throw new NotFoundError('Token invalido')
     }
 
     if (
@@ -101,7 +111,7 @@ export class AuthService {
 
     if (passwordDuplicate) {
       throw new ValidationError(
-        'A nova password não pode ser a mesma que a atual'
+        'A nova password nao pode ser a mesma que a atual'
       )
     }
 
