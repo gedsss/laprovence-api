@@ -2,6 +2,7 @@ import bcrypt from 'bcrypt'
 import { NotFoundError, ValidationError } from '../../../errors/errors.js'
 import { prisma } from '../../../prisma/prismaClient.js'
 import type { CreateUserInput, UpdateUserInput } from './user.schema.js'
+import { cnpj, cpf } from 'cpf-cnpj-validator'
 
 export interface CreateUserSchemaDTO extends CreateUserInput {}
 
