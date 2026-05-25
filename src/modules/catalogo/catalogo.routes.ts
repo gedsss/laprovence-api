@@ -4,7 +4,7 @@ import { catalogoController } from './catalogo.controller.js'
 export async function catalogoRoutes(app: FastifyInstance) {
   app.post(
     '/catalogo',
-    { preHandler: [app.authenticate] },
+    { preHandler: [app.authenticate, app.requireGestor, app.requireCsrf] },
     async (request, reply) => {
       return catalogoController.createCatalogo(request, reply)
     }
@@ -16,7 +16,7 @@ export async function catalogoRoutes(app: FastifyInstance) {
 
   app.put(
     '/catalogo/:id',
-    { preHandler: [app.authenticate] },
+    { preHandler: [app.authenticate, app.requireGestor, app.requireCsrf] },
     async (request, reply) => {
       return catalogoController.updateCatalogo(request, reply)
     }
@@ -28,7 +28,7 @@ export async function catalogoRoutes(app: FastifyInstance) {
 
   app.delete(
     '/catalogo/:id',
-    { preHandler: [app.authenticate] },
+    { preHandler: [app.authenticate, app.requireGestor, app.requireCsrf] },
     async (request, reply) => {
       return catalogoController.deleteCatalogo(request, reply)
     }

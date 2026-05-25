@@ -1,6 +1,11 @@
-import type { FastifyRequest, FastifyReply } from 'fastify'
-import { comprasService } from './compras.service.js'
+import type { FastifyReply, FastifyRequest } from 'fastify'
+import {
+  requireActor,
+  requireCompraOwnerOrGestor,
+  requireListOwnerOrGestor,
+} from '../../lib/access-control.js'
 import { CreateComprasSchema, UpdateComprasSchema } from './compras.schema.js'
+import { comprasService } from './compras.service.js'
 
 export class ComprasController {
   async createCompras(request: FastifyRequest, reply: FastifyReply) {
@@ -11,12 +16,17 @@ export class ComprasController {
     return reply.status(201).send({
       success: true,
       message: 'Sucesso ao criar a compra',
-      data: compras,
+      data: {
+        id: compras.id,
+        reserva_expira_em: compras.reserva_expira_em,
+        checkout_access_token: compras.checkout_access_token,
+      },
     })
   }
 
   async getComprasByID(request: FastifyRequest, reply: FastifyReply) {
     const { id } = request.params as { id: string }
+    await requireCompraOwnerOrGestor(requireActor(request.actor), id)
 
     const compras = await comprasService.getComprasByID(id)
 
@@ -41,6 +51,7 @@ export class ComprasController {
 
   async getComprasByLista(request: FastifyRequest, reply: FastifyReply) {
     const { lista } = request.params as { lista: string }
+    await requireListOwnerOrGestor(requireActor(request.actor), lista)
 
     const compras = await comprasService.getComprasByLista(lista)
 
@@ -51,9 +62,23 @@ export class ComprasController {
     })
   }
 
+  async getDisponibilidadeByLista(
+    request: FastifyRequest,
+    reply: FastifyReply
+  ) {
+    const { lista } = request.params as { lista: string }
+    const compras = await comprasService.getDisponibilidadeByLista(lista)
+
+    return reply.status(200).send({
+      success: true,
+      data: compras,
+    })
+  }
+
   async updateCompras(request: FastifyRequest, reply: FastifyReply) {
     const { id } = request.params as { id: string }
     const data = UpdateComprasSchema.parse(request.body)
+    await requireCompraOwnerOrGestor(requireActor(request.actor), id)
 
     const compras = await comprasService.updateCompras(data, id)
 
@@ -66,6 +91,7 @@ export class ComprasController {
 
   async deleteCompras(request: FastifyRequest, reply: FastifyReply) {
     const { id } = request.params as { id: string }
+    await requireCompraOwnerOrGestor(requireActor(request.actor), id)
 
     await comprasService.deleteCompras(id)
 

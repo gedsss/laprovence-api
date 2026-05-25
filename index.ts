@@ -1,35 +1,93 @@
 /** biome-ignore-all lint/style/noNonNullAssertion: <> */
-import { ZodError } from 'zod'
-import Fastify from 'fastify'
+
 import type { FastifyError } from 'fastify'
+import Fastify from 'fastify'
+import { ZodError } from 'zod'
 import 'dotenv/config'
-import { userRoutes } from './src/modules/user/user.routes.js'
+import cookie from '@fastify/cookie'
+import cors from '@fastify/cors'
+import helmet from '@fastify/helmet'
+import jwt from '@fastify/jwt'
+import rateLimit from '@fastify/rate-limit'
+import { AppError } from './errors/appError.js'
+import { authRoutes } from './src/auth/auth.routes.js'
 import { catalogoRoutes } from './src/modules/catalogo/catalogo.routes.js'
 import { catalogoImagesRoutes } from './src/modules/catalogo_images/catalogo.images.routes.js'
-import { listasRoutes } from './src/modules/listas/listas.routes.js'
-import { listaItensRoutes } from './src/modules/lista_itens/lista_itens.routes.js'
 import { comprasRoutes } from './src/modules/compras/compras.routes.js'
-import { premontadasRoutes } from './src/modules/premontadas/premontadas.routes.js'
+import { listaItensRoutes } from './src/modules/lista_itens/lista_itens.routes.js'
+import { listasRoutes } from './src/modules/listas/listas.routes.js'
 import { premontadaItensRoutes } from './src/modules/premontada_itens/premontada_itens.routes.js'
-import { authRoutes } from './src/auth/auth.routes.js'
+import { premontadasRoutes } from './src/modules/premontadas/premontadas.routes.js'
+import { userRoutes } from './src/modules/user/user.routes.js'
 import { pagBankRoutes } from './src/pagbank/pagbank.routes.js'
-import { AppError } from './errors/appError.js'
-import helmet from '@fastify/helmet'
-import cors from '@fastify/cors'
-import rateLimit from '@fastify/rate-limit'
-import jwt from '@fastify/jwt'
 import authPlugin from './src/plugins/auth.js'
 
+const jwtSecret = process.env.JWT_PASS
+
+if (!jwtSecret || jwtSecret.length < 32) {
+  throw new Error('JWT_PASS deve ser configurado com pelo menos 32 caracteres')
+}
+
+function trustProxySetting() {
+  const configured = process.env.TRUST_PROXY?.trim()
+  if (!configured) return false
+  if (/^\d+$/.test(configured)) return Number(configured)
+  return configured
+}
+
 const fastify = Fastify({
-  logger: true,
-  bodyLimit: 20 * 1024 * 1024, // 20MB
+  trustProxy: trustProxySetting(),
+  logger: {
+    redact: [
+      'req.headers.authorization',
+      'req.headers.cookie',
+      'res.headers["set-cookie"]',
+      '*.password',
+      '*.token',
+      '*.recaptcha_token',
+      'req.headers["x-checkout-token"]',
+      '*.checkout_access_token',
+      '*.card_encrypted',
+      '*.cpf',
+      '*.email',
+      '*.telefone',
+    ],
+  },
+  bodyLimit: 256 * 1024,
 })
 
+fastify.register(cookie)
+
 fastify.register(jwt, {
-  secret: process.env.JWT_PASS!,
+  secret: jwtSecret,
+  cookie: {
+    cookieName: 'lp_session',
+    signed: false,
+  },
 })
 
 fastify.register(authPlugin)
+
+fastify.register(rateLimit, {
+  global: true,
+  max: 100,
+  timeWindow: '1 minute',
+})
+
+const corsOrigins = process.env.CORS_ORIGINS?.split(',')
+  .map(origin => origin.trim())
+  .filter(Boolean)
+
+if (process.env.NODE_ENV === 'production' && !corsOrigins?.length) {
+  throw new Error('CORS_ORIGINS deve ser configurado em producao')
+}
+
+fastify.register(cors, {
+  origin: corsOrigins?.length ? corsOrigins : true,
+  credentials: true,
+})
+
+fastify.register(helmet)
 
 // Rota raiz
 fastify.get('/', (_request, reply) => {
@@ -47,19 +105,6 @@ fastify.register(premontadasRoutes)
 fastify.register(premontadaItensRoutes)
 fastify.register(authRoutes)
 fastify.register(pagBankRoutes)
-
-fastify.register(rateLimit, {
-  global: true,
-  max: 100,
-  timeWindow: '1 minute',
-})
-
-fastify.register(cors, {
-  origin: true,
-  credentials: true,
-})
-
-fastify.register(helmet)
 
 // Handler de erro global
 fastify.setErrorHandler((error: FastifyError | AppError, _request, reply) => {
@@ -79,14 +124,13 @@ fastify.setErrorHandler((error: FastifyError | AppError, _request, reply) => {
       success: false,
       code: error.code,
       message: error.message,
-      details: error.details,
     })
   }
 
   if (error.statusCode === 413) {
     return reply.status(413).send({
       success: false,
-      message: 'Imagem grande demais. Utilize uma imagem menor que 20MB.',
+      message: 'Requisicao grande demais.',
     })
   }
 
@@ -98,7 +142,10 @@ fastify.setErrorHandler((error: FastifyError | AppError, _request, reply) => {
     })
   }
 
-  fastify.log.error(error)
+  fastify.log.error(
+    { statusCode: error.statusCode },
+    'Erro interno nao tratado'
+  )
 
   return reply.status(500).send({
     success: false,
@@ -109,7 +156,7 @@ fastify.setErrorHandler((error: FastifyError | AppError, _request, reply) => {
 // Iniciar servidor
 fastify.listen({ port: 3668, host: '0.0.0.0' }, (err, address) => {
   if (err) {
-    fastify.log.error(err)
+    fastify.log.error('Falha ao iniciar servidor')
     process.exit(1)
   }
   fastify.log.info(`Servidor rodando em ${address}`)

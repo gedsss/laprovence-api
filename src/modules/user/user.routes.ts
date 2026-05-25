@@ -2,9 +2,13 @@ import type { FastifyInstance } from 'fastify'
 import { userController } from './user.controller.js'
 
 export async function userRoutes(app: FastifyInstance) {
-  app.post('/users', async (request, reply) => {
-    return userController.createUser(request, reply)
-  })
+  app.post(
+    '/users',
+    { config: { rateLimit: { max: 5, timeWindow: '1 minute' } } },
+    async (request, reply) => {
+      return userController.createUser(request, reply)
+    }
+  )
 
   app.get(
     '/users/:id',
@@ -16,7 +20,7 @@ export async function userRoutes(app: FastifyInstance) {
 
   app.put(
     '/users/:id',
-    { preHandler: [app.authenticate] },
+    { preHandler: [app.authenticate, app.requireCsrf] },
     async (request, reply) => {
       return userController.updateUser(request, reply)
     }
@@ -24,7 +28,7 @@ export async function userRoutes(app: FastifyInstance) {
 
   app.delete(
     '/users/:id',
-    { preHandler: [app.authenticate] },
+    { preHandler: [app.authenticate, app.requireCsrf] },
     async (request, reply) => {
       return userController.deleteUser(request, reply)
     }

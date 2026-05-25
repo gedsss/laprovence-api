@@ -1,10 +1,15 @@
-import type { FastifyRequest, FastifyReply } from 'fastify'
-import { listaItensService } from './lista_itens.service.js'
+import type { FastifyReply, FastifyRequest } from 'fastify'
+import {
+  requireActor,
+  requireListOwnerOrGestor,
+} from '../../lib/access-control.js'
 import { CreateListaItensSchema } from './lista_itens.schema.js'
+import { listaItensService } from './lista_itens.service.js'
 
 export class ListaItensController {
   async createListaItem(request: FastifyRequest, reply: FastifyReply) {
     const data = CreateListaItensSchema.parse(request.body)
+    await requireListOwnerOrGestor(requireActor(request.actor), data.listas_id)
 
     const listaItem = await listaItensService.createListaItem(data)
 
@@ -30,7 +35,7 @@ export class ListaItensController {
   async deleteListaItem(request: FastifyRequest, reply: FastifyReply) {
     const { id } = request.params as { id: string }
 
-    await listaItensService.deleteListaItem(id)
+    await listaItensService.deleteListaItem(id, requireActor(request.actor))
 
     return reply.status(200).send({
       message: 'Item removido com sucesso',

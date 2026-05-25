@@ -4,7 +4,7 @@ import { listasController } from './listas.controller.js'
 export async function listasRoutes(app: FastifyInstance) {
   app.post(
     '/listas',
-    { preHandler: [app.authenticate] },
+    { preHandler: [app.authenticate, app.requireCsrf] },
     async (request, reply) => {
       return listasController.createListas(request, reply)
     }
@@ -12,7 +12,7 @@ export async function listasRoutes(app: FastifyInstance) {
 
   app.get(
     '/listas',
-    { preHandler: [app.authenticate] },
+    { preHandler: [app.authenticate, app.requireGestor] },
     async (request, reply) => {
       return listasController.getListas(request, reply)
     }
@@ -40,7 +40,7 @@ export async function listasRoutes(app: FastifyInstance) {
 
   app.put(
     '/listas/:id',
-    { preHandler: [app.authenticate] },
+    { preHandler: [app.authenticate, app.requireCsrf] },
     async (request, reply) => {
       return listasController.updateListas(request, reply)
     }
@@ -48,7 +48,7 @@ export async function listasRoutes(app: FastifyInstance) {
 
   app.delete(
     '/listas/:id',
-    { preHandler: [app.authenticate] },
+    { preHandler: [app.authenticate, app.requireCsrf] },
     async (request, reply) => {
       return listasController.deleteListas(request, reply)
     }

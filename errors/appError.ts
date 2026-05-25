@@ -12,7 +12,7 @@ export class AppError extends Error {
   public statusCode: number
   public code: ErrorCode
   public isOperational: boolean
-  public details?: ErrorDetails
+  public details: ErrorDetails | undefined
   public timestamp: string
 
   constructor(

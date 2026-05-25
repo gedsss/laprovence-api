@@ -1,6 +1,7 @@
 import type { FastifyReply, FastifyRequest } from 'fastify'
-import { userService } from './user.service.js'
+import { requireActor, requireSelfOrGestor } from '../../lib/access-control.js'
 import { CreateUserSchema, UpdateUserSchema } from './user.schema.js'
+import { userService } from './user.service.js'
 
 export class UserController {
   async createUser(request: FastifyRequest, reply: FastifyReply) {
@@ -17,6 +18,7 @@ export class UserController {
 
   async getUserByID(request: FastifyRequest, reply: FastifyReply) {
     const { id } = request.params as { id: string }
+    requireSelfOrGestor(requireActor(request.actor), id)
 
     const user = await userService.getUserByID(id)
 
@@ -30,6 +32,7 @@ export class UserController {
   async updateUser(request: FastifyRequest, reply: FastifyReply) {
     const data = UpdateUserSchema.parse(request.body)
     const { id } = request.params as { id: string }
+    requireSelfOrGestor(requireActor(request.actor), id)
 
     const user = await userService.updateUser(data, id)
 
@@ -42,6 +45,7 @@ export class UserController {
 
   async deleteUser(request: FastifyRequest, reply: FastifyReply) {
     const { id } = request.params as { id: string }
+    requireSelfOrGestor(requireActor(request.actor), id)
 
     await userService.deleteUser(id)
 

@@ -11,11 +11,10 @@ export const CreateComprasSchema = z.object({
     message: 'Formato inválido (máx 10 dígitos, 2 decimais)',
   }),
   forma_pagamento: z.string(),
-  status_pagamento: z
-    .enum(['Pendente', 'Aprovado', 'Rejeitado'])
-    .default('Pendente'),
+  status_pagamento: z.literal('Pendente').default('Pendente'),
   is_new_gestor: z.boolean().default(true),
   is_new_noivo: z.boolean().default(false),
+  recaptcha_token: z.string().min(1).optional(),
 })
 
 export const ComprasParamsSchema = z.object({
@@ -33,10 +32,7 @@ export const UpdateComprasSchema = z.object({
     })
     .optional(),
   forma_pagamento: z.string().optional(),
-  status_pagamento: z
-    .enum(['Pendente', 'Aprovado', 'Rejeitado'])
-    .default('Pendente')
-    .optional(),
+  status_pagamento: z.literal('Cancelado').optional(),
   is_new_gestor: z.boolean().default(true).optional(),
   is_new_noivo: z.boolean().default(false).optional(),
 })

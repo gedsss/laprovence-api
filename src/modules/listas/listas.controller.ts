@@ -1,10 +1,16 @@
-import type { FastifyRequest, FastifyReply } from 'fastify'
-import { listasService } from './listas.service.js'
+import type { FastifyReply, FastifyRequest } from 'fastify'
+import {
+  requireActor,
+  requireListOwnerOrGestor,
+  requireSelfOrGestor,
+} from '../../lib/access-control.js'
 import { CreateListasSchema, UpdateListasSchema } from './listas.schema.js'
+import { listasService } from './listas.service.js'
 
 export class ListasController {
   async createListas(request: FastifyRequest, reply: FastifyReply) {
     const data = CreateListasSchema.parse(request.body)
+    requireSelfOrGestor(requireActor(request.actor), data.user_id)
 
     const lista = await listasService.createListas(data)
 
@@ -17,6 +23,7 @@ export class ListasController {
 
   async getListasByID(request: FastifyRequest, reply: FastifyReply) {
     const { id } = request.params as { id: string }
+    await requireListOwnerOrGestor(requireActor(request.actor), id)
 
     const lista = await listasService.getListasByID(id)
 
@@ -27,7 +34,7 @@ export class ListasController {
     })
   }
 
-  async getListas(request: FastifyRequest, reply: FastifyReply) {
+  async getListas(_request: FastifyRequest, reply: FastifyReply) {
     const lista = await listasService.getListas()
 
     return reply.status(200).send({
@@ -51,6 +58,7 @@ export class ListasController {
 
   async getListasByNoivo(request: FastifyRequest, reply: FastifyReply) {
     const { user_id } = request.params as { user_id: string }
+    requireSelfOrGestor(requireActor(request.actor), user_id)
 
     const lista = await listasService.getListaByNoivo(user_id)
 
@@ -64,6 +72,7 @@ export class ListasController {
   async updateListas(request: FastifyRequest, reply: FastifyReply) {
     const { id } = request.params as { id: string }
     const data = UpdateListasSchema.parse(request.body)
+    await requireListOwnerOrGestor(requireActor(request.actor), id)
 
     const lista = await listasService.updateListasById(id, data)
 
@@ -76,6 +85,7 @@ export class ListasController {
 
   async deleteListas(request: FastifyRequest, reply: FastifyReply) {
     const { id } = request.params as { id: string }
+    await requireListOwnerOrGestor(requireActor(request.actor), id)
 
     await listasService.deleteListas(id)
 

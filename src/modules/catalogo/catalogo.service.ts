@@ -30,7 +30,7 @@ export class CatalogoService {
           setor: data.setor,
           estoque: data.estoque,
           quantidade: data.quantidade,
-          peso: data.peso,
+          ...(data.peso !== undefined && { peso: data.peso }),
           status: data.status,
           version: data.version,
         },
