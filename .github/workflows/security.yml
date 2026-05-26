@@ -30,6 +30,8 @@ jobs:
 
       - name: Generate Prisma client
         run: npx prisma generate
+        env:
+          DATABASE_URL: postgresql://ci:ci@localhost/ci
 
       - name: Typecheck
         run: npm run typecheck
