@@ -18,6 +18,7 @@ import { listaItensRoutes } from './src/modules/lista_itens/lista_itens.routes.j
 import { listasRoutes } from './src/modules/listas/listas.routes.js'
 import { premontadaItensRoutes } from './src/modules/premontada_itens/premontada_itens.routes.js'
 import { premontadasRoutes } from './src/modules/premontadas/premontadas.routes.js'
+import { resendRoutes } from './src/modules/resend-email/resend.routes.js'
 import { userRoutes } from './src/modules/user/user.routes.js'
 import { pagBankRoutes } from './src/pagbank/pagbank.routes.js'
 import authPlugin from './src/plugins/auth.js'
@@ -104,6 +105,7 @@ fastify.register(comprasRoutes)
 fastify.register(premontadasRoutes)
 fastify.register(premontadaItensRoutes)
 fastify.register(authRoutes)
+fastify.register(resendRoutes)
 fastify.register(pagBankRoutes)
 
 // Handler de erro global
