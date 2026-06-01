@@ -55,11 +55,6 @@ export class AuthController {
     return reply.status(200).send({
       success: true,
       message: result.message,
-      ...(result.token && {
-        data: {
-          token: result.token, // só para teste local
-        },
-      }),
     })
   }
 

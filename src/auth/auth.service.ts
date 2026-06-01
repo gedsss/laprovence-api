@@ -7,6 +7,7 @@ import {
   ValidationError,
 } from '../../errors/errors.js'
 import { prisma } from '../../prisma/prismaClient.js'
+import { resendService } from '../modules/resend-email/resend.service.js'
 import type { CreateLoginInput } from './auth.schema.js'
 
 export interface CreateLoginSchemaDTO extends CreateLoginInput {}
@@ -101,18 +102,12 @@ export class AuthService {
       },
     })
 
-    const response: { message: string; token?: string } = {
-      message: PASSWORD_RESET_MESSAGE,
-    }
+    const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:5173'
+    const resetUrl = `${frontendUrl}/reset-password?token=${rawToken}`
 
-    if (
-      process.env.ALLOW_PASSWORD_RESET_TOKEN_RESPONSE === 'true' &&
-      process.env.NODE_ENV !== 'production'
-    ) {
-      response.token = rawToken
-    }
+    await resendService.sendRecuperarSenha(existingUser.id, resetUrl)
 
-    return response
+    return { message: PASSWORD_RESET_MESSAGE }
   }
 
   async resetPassword(token: string, password: string) {

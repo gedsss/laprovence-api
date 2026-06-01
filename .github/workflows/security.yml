@@ -28,6 +28,11 @@ jobs:
       - name: Dependency audit
         run: npm audit --audit-level=high
 
+      - name: Generate Prisma client
+        run: npx prisma generate
+        env:
+          DATABASE_URL: postgresql://ci:ci@localhost/ci
+
       - name: Typecheck
         run: npm run typecheck
 
@@ -41,4 +46,6 @@ jobs:
 
       - name: Secret scan
         uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
