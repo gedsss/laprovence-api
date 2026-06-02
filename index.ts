@@ -159,9 +159,10 @@ fastify.setErrorHandler((error: FastifyError | AppError, _request, reply) => {
 const listenHost =
   process.env.HOST?.trim() ||
   (process.env.NODE_ENV === 'production' ? '127.0.0.1' : '0.0.0.0')
+const listenPort = Number(process.env.PORT || '3668')
 
 // Iniciar servidor
-fastify.listen({ port: 3668, host: listenHost }, (err, address) => {
+fastify.listen({ port: listenPort, host: listenHost }, (err, address) => {
   if (err) {
     fastify.log.error('Falha ao iniciar servidor')
     process.exit(1)
