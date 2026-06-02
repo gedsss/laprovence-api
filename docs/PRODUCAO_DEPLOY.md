@@ -1,6 +1,6 @@
 # Deploy de producao
 
-O deploy automatico de producao da API roda a partir da branch `master`.
+O deploy automatico de producao da API roda a partir da branch `main`.
 
 ## URL
 

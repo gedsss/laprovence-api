@@ -3,7 +3,7 @@ name: Deploy Producao API
 on:
   push:
     branches:
-      - master
+      - main
   workflow_dispatch:
 
 permissions:
@@ -86,7 +86,7 @@ jobs:
           set -euo pipefail
 
           REPO_URL="https://github.com/gedsss/laprovence-api.git"
-          BRANCH="master"
+          BRANCH="main"
           PROD_APP_DIR="${PROD_APP_DIR/#\~/$HOME}"
 
           mkdir -p "$PROD_APP_DIR"
