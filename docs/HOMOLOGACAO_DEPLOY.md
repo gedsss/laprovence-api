@@ -2,7 +2,7 @@
 
 Este ambiente deve ser isolado de producao:
 
-- branch: `developer`
+- branch: `develop`
 - processo PM2: `laprovence-api-homolog`
 - porta local sugerida: `3669`
 - URL publica: `https://laprovence.hom-oud.com.br/api`
