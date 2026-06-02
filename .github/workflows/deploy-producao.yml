@@ -1,0 +1,119 @@
+name: Deploy Producao API
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: producao-api
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validar API
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Dependency audit
+        run: npm audit --audit-level=high
+
+      - name: Generate Prisma client
+        run: npm run prisma:generate
+        env:
+          DATABASE_URL: postgresql://ci:ci@localhost/ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+  deploy:
+    name: Publicar API producao
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: producao-api
+    env:
+      PROD_APP_DIR: ${{ vars.PROD_APP_DIR || '~/apps/laprovence-api-production' }}
+      PROD_APP_NAME: ${{ vars.PROD_APP_NAME || 'laprovence-api-production' }}
+      PROD_API_PORT: ${{ vars.PROD_API_PORT || '3668' }}
+
+    steps:
+      - name: Validate deploy secrets
+        env:
+          PROD_SSH_HOST: ${{ secrets.PROD_SSH_HOST }}
+          PROD_SSH_USER: ${{ secrets.PROD_SSH_USER }}
+          PROD_SSH_KEY: ${{ secrets.PROD_SSH_KEY }}
+        run: |
+          test -n "$PROD_SSH_HOST" || (echo "Configure PROD_SSH_HOST." && exit 1)
+          test -n "$PROD_SSH_USER" || (echo "Configure PROD_SSH_USER." && exit 1)
+          test -n "$PROD_SSH_KEY" || (echo "Configure PROD_SSH_KEY." && exit 1)
+
+      - name: Configure SSH
+        env:
+          PROD_SSH_HOST: ${{ secrets.PROD_SSH_HOST }}
+          PROD_SSH_KEY: ${{ secrets.PROD_SSH_KEY }}
+          PROD_SSH_PORT: ${{ secrets.PROD_SSH_PORT || '22' }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$PROD_SSH_KEY" > ~/.ssh/prod_key
+          chmod 600 ~/.ssh/prod_key
+          ssh-keyscan -p "$PROD_SSH_PORT" "$PROD_SSH_HOST" >> ~/.ssh/known_hosts
+
+      - name: Deploy over SSH
+        env:
+          PROD_SSH_HOST: ${{ secrets.PROD_SSH_HOST }}
+          PROD_SSH_USER: ${{ secrets.PROD_SSH_USER }}
+          PROD_SSH_PORT: ${{ secrets.PROD_SSH_PORT || '22' }}
+        run: |
+          ssh -i ~/.ssh/prod_key -p "$PROD_SSH_PORT" "$PROD_SSH_USER@$PROD_SSH_HOST" \
+            "PROD_APP_DIR='$PROD_APP_DIR' PROD_APP_NAME='$PROD_APP_NAME' PROD_API_PORT='$PROD_API_PORT' bash -s" <<'REMOTE'
+          set -euo pipefail
+
+          REPO_URL="https://github.com/gedsss/laprovence-api.git"
+          BRANCH="master"
+          PROD_APP_DIR="${PROD_APP_DIR/#\~/$HOME}"
+
+          mkdir -p "$PROD_APP_DIR"
+          cd "$PROD_APP_DIR"
+
+          if [ ! -d ".git" ]; then
+            git init
+            git remote add origin "$REPO_URL"
+          fi
+
+          git fetch origin "$BRANCH"
+          git checkout -B "$BRANCH" "origin/$BRANCH"
+          git reset --hard "origin/$BRANCH"
+
+          if [ ! -f ".env.production" ]; then
+            echo "Crie $PROD_APP_DIR/.env.production com as variaveis de producao."
+            exit 1
+          fi
+
+          set -a
+          . ./.env.production
+          set +a
+
+          npm ci
+          npm run prisma:generate
+          npm run prisma:migrate:deploy
+
+          PM2_APP_NAME="$PROD_APP_NAME" PORT="$PROD_API_PORT" pm2 startOrRestart ecosystem.production.config.cjs
+          pm2 save
+          REMOTE
