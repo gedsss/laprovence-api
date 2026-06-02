@@ -1,85 +1,72 @@
 # Deploy de homologacao
 
-Este ambiente deve ser isolado de producao:
+O ambiente de homologacao publica a API a partir da branch `develop`.
 
-- branch: `develop`
-- processo PM2: `laprovence-api-homolog`
-- porta local sugerida: `3669`
+## Ambiente atual
+
+- API: `/opt/laprovence/api`
+- Branch publicada: `develop`
+- Servico: `systemd` `laprovence-api`
+- Porta local: `3668`
 - URL publica: `https://laprovence.hom-oud.com.br/api`
-- banco: uma base PostgreSQL propria de homologacao
-- Redis: uma instancia ou DB logico proprio de homologacao
+- Ambiente: arquivo local `/opt/laprovence/api/.env`
+- Banco e Redis: servicos `db` e `redis` do `docker-compose.yml`
+- Recuperacao de senha por email: requer `RESEND_API_KEY` no `.env`
 
-## GitHub Environment
+## Automacao
 
-Crie o environment `homologacao-api` no repositorio da API.
+A VM executa um timer de `systemd` que consulta `origin/develop` e publica
+quando houver commit novo:
 
-Secrets obrigatorios:
+- script: `/opt/laprovence/deploy-homologacao-api.sh`
+- service: `laprovence-api-autodeploy.service`
+- timer: `laprovence-api-autodeploy.timer`
 
-- `HOMOLOG_SSH_HOST`
-- `HOMOLOG_SSH_USER`
-- `HOMOLOG_SSH_KEY`
+O deploy faz:
 
-Secret opcional:
+1. `git fetch origin develop`
+2. checkout/reset para `origin/develop`
+3. `docker compose up -d db redis`
+4. `npm ci --no-audit --no-fund`
+5. `npm run prisma:generate`
+6. `npm run prisma:migrate:deploy`
+7. `npm run typecheck`
+8. `systemctl restart laprovence-api`
+9. health check em `http://127.0.0.1:3668/`
 
-- `HOMOLOG_SSH_PORT` (padrao `22`)
+Como a homologacao nao possui SSH publico de entrada, o GitHub Actions apenas
+valida a branch. O deploy automatico acontece dentro da propria VM.
 
-Variables opcionais:
+## Instalacao do timer
 
-- `HOMOLOG_APP_DIR` (padrao `~/apps/laprovence-api-homolog`)
-- `HOMOLOG_APP_NAME` (padrao `laprovence-api-homolog`)
-- `HOMOLOG_API_PORT` (padrao `3669`)
-
-## Arquivo de ambiente no servidor
-
-No servidor, crie `~/apps/laprovence-api-homolog/.env.homologacao` antes do
-primeiro deploy. Exemplo:
-
-```env
-NODE_ENV="production"
-PORT="3669"
-HOST="127.0.0.1"
-TRUST_PROXY="1"
-
-DATABASE_URL="postgresql://usuario_homolog:senha@localhost:5432/laprovence_homolog"
-REDIS_URL="redis://localhost:6379/1"
-JWT_PASS="defina_um_segredo_de_homologacao_com_32_chars"
-
-CORS_ORIGINS="https://laprovence.hom-oud.com.br"
-FRONTEND_URL="https://laprovence.hom-oud.com.br/"
-
-PAGBANK_ENV="sandbox"
-PAGBANK_TOKEN="token_sandbox_pagbank"
-PAGBANK_WEBHOOK_URL="https://laprovence.hom-oud.com.br/api/pagbank/webhook"
-PAGBANK_WEBHOOK_SIGNATURE_REQUIRED="true"
-
-# Opcional em homologacao se ja houver chave v3 configurada.
-RECAPTCHA_SECRET_KEY=""
-RECAPTCHA_MIN_SCORE="0.5"
-```
-
-## Nginx
-
-Exemplo de proxy para servir a API de homologacao sem tocar na API de producao:
-
-```nginx
-server {
-  listen 443 ssl http2;
-  server_name laprovence.hom-oud.com.br;
-
-  location /api/ {
-    proxy_pass http://127.0.0.1:3669/;
-    proxy_http_version 1.1;
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
-  }
-}
-```
-
-Depois de apontar o DNS e emitir o certificado TLS, valide:
+Execute como `root` no servidor:
 
 ```bash
-curl https://laprovence.hom-oud.com.br/api
-curl https://laprovence.hom-oud.com.br/api/catalogo
+install -m 0755 scripts/deploy-homologacao-api.sh /opt/laprovence/deploy-homologacao-api.sh
+install -m 0644 deploy/systemd/laprovence-api-autodeploy.service /etc/systemd/system/laprovence-api-autodeploy.service
+install -m 0644 deploy/systemd/laprovence-api-autodeploy.timer /etc/systemd/system/laprovence-api-autodeploy.timer
+systemctl daemon-reload
+systemctl enable --now laprovence-api-autodeploy.timer
+systemctl start laprovence-api-autodeploy.service
+```
+
+## Operacao
+
+Status do timer:
+
+```bash
+systemctl list-timers laprovence-api-autodeploy.timer
+systemctl status laprovence-api-autodeploy.service
+```
+
+Logs do ultimo deploy:
+
+```bash
+journalctl -u laprovence-api-autodeploy.service -n 100 --no-pager
+```
+
+Validacao publica:
+
+```bash
+curl -fsS https://laprovence.hom-oud.com.br/api/
 ```

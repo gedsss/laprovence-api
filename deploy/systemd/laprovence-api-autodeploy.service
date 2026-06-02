@@ -1,0 +1,9 @@
+[Unit]
+Description=Deploy La Provence API homologacao from origin/develop
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/laprovence/deploy-homologacao-api.sh

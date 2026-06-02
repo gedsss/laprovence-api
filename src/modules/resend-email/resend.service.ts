@@ -4,9 +4,17 @@ import { NotFoundError, ValidationError } from '../../../errors/errors.js'
 import { prisma } from '../../../prisma/prismaClient.js'
 import { RecuperarSenhaEmail } from './RecuperarSenhaEmail.js'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-
 const from = process.env.EMAIL_FROM ?? 'La Provence <decor@laprovencevie.com.br>'
+
+function getResendClient() {
+  const apiKey = process.env.RESEND_API_KEY?.trim()
+
+  if (!apiKey) {
+    throw new ValidationError('RESEND_API_KEY nao configurado')
+  }
+
+  return new Resend(apiKey)
+}
 
 export class ResendService {
   async sendRecuperarSenha(id: string, resetUrl: string) {
@@ -17,7 +25,7 @@ export class ResendService {
 
     if (!user) throw new NotFoundError('Usuário')
 
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await getResendClient().emails.send({
       from,
       to: user.email,
       replyTo: from,

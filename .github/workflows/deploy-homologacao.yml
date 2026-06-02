@@ -13,6 +13,9 @@ concurrency:
   group: homologacao-api
   cancel-in-progress: true
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   validate:
     name: Validar API
@@ -43,77 +46,12 @@ jobs:
         run: npm run typecheck
 
   deploy:
-    name: Publicar API homologacao
+    name: Deploy pelo servidor de homologacao
     needs: validate
     runs-on: ubuntu-latest
-    environment: homologacao-api
-    env:
-      HOMOLOG_APP_DIR: ${{ vars.HOMOLOG_APP_DIR || '~/apps/laprovence-api-homolog' }}
-      HOMOLOG_APP_NAME: ${{ vars.HOMOLOG_APP_NAME || 'laprovence-api-homolog' }}
-      HOMOLOG_API_PORT: ${{ vars.HOMOLOG_API_PORT || '3669' }}
 
     steps:
-      - name: Validate deploy secrets
-        env:
-          HOMOLOG_SSH_HOST: ${{ secrets.HOMOLOG_SSH_HOST }}
-          HOMOLOG_SSH_USER: ${{ secrets.HOMOLOG_SSH_USER }}
-          HOMOLOG_SSH_KEY: ${{ secrets.HOMOLOG_SSH_KEY }}
+      - name: Deployment source
         run: |
-          test -n "$HOMOLOG_SSH_HOST" || (echo "Configure HOMOLOG_SSH_HOST." && exit 1)
-          test -n "$HOMOLOG_SSH_USER" || (echo "Configure HOMOLOG_SSH_USER." && exit 1)
-          test -n "$HOMOLOG_SSH_KEY" || (echo "Configure HOMOLOG_SSH_KEY." && exit 1)
-
-      - name: Configure SSH
-        env:
-          HOMOLOG_SSH_HOST: ${{ secrets.HOMOLOG_SSH_HOST }}
-          HOMOLOG_SSH_KEY: ${{ secrets.HOMOLOG_SSH_KEY }}
-          HOMOLOG_SSH_PORT: ${{ secrets.HOMOLOG_SSH_PORT || '22' }}
-        run: |
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          printf '%s\n' "$HOMOLOG_SSH_KEY" > ~/.ssh/homolog_key
-          chmod 600 ~/.ssh/homolog_key
-          ssh-keyscan -p "$HOMOLOG_SSH_PORT" "$HOMOLOG_SSH_HOST" >> ~/.ssh/known_hosts
-
-      - name: Deploy over SSH
-        env:
-          HOMOLOG_SSH_HOST: ${{ secrets.HOMOLOG_SSH_HOST }}
-          HOMOLOG_SSH_USER: ${{ secrets.HOMOLOG_SSH_USER }}
-          HOMOLOG_SSH_PORT: ${{ secrets.HOMOLOG_SSH_PORT || '22' }}
-        run: |
-          ssh -i ~/.ssh/homolog_key -p "$HOMOLOG_SSH_PORT" "$HOMOLOG_SSH_USER@$HOMOLOG_SSH_HOST" \
-            "HOMOLOG_APP_DIR='$HOMOLOG_APP_DIR' HOMOLOG_APP_NAME='$HOMOLOG_APP_NAME' HOMOLOG_API_PORT='$HOMOLOG_API_PORT' bash -s" <<'REMOTE'
-          set -euo pipefail
-
-          REPO_URL="https://github.com/gedsss/laprovence-api.git"
-          BRANCH="develop"
-          HOMOLOG_APP_DIR="${HOMOLOG_APP_DIR/#\~/$HOME}"
-
-          mkdir -p "$HOMOLOG_APP_DIR"
-          cd "$HOMOLOG_APP_DIR"
-
-          if [ ! -d ".git" ]; then
-            git init
-            git remote add origin "$REPO_URL"
-          fi
-
-          git fetch origin "$BRANCH"
-          git checkout -B "$BRANCH" "origin/$BRANCH"
-          git reset --hard "origin/$BRANCH"
-
-          if [ ! -f ".env.homologacao" ]; then
-            echo "Crie $HOMOLOG_APP_DIR/.env.homologacao com as variaveis da base de homologacao."
-            exit 1
-          fi
-
-          set -a
-          . ./.env.homologacao
-          set +a
-
-          npm ci
-          npm run prisma:generate
-          npm run prisma:migrate:deploy
-
-          PM2_APP_NAME="$HOMOLOG_APP_NAME" PORT="$HOMOLOG_API_PORT" pm2 startOrRestart ecosystem.homolog.config.cjs
-          pm2 save
-          REMOTE
+          echo "A VM de homologacao faz pull automatico de origin/develop via systemd timer."
+          echo "Nenhum secret de SSH e necessario no GitHub para este ambiente."
