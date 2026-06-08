@@ -6,7 +6,19 @@ export type RequestActor = {
   role: 'gestor' | 'noivo'
 }
 
+export type InstitucionalAdminActor = {
+  id: string
+  email: string
+}
+
 export function requireActor(actor: RequestActor | undefined) {
+  if (!actor) throw new ForbiddenError()
+  return actor
+}
+
+export function requireInstitucionalAdmin(
+  actor: InstitucionalAdminActor | undefined
+) {
   if (!actor) throw new ForbiddenError()
   return actor
 }

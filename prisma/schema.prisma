@@ -173,3 +173,51 @@ model premontada_itens {
 
   @@id([premontada_id, catalogo_id])
 }
+
+model institucional_admin_user {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email      String   @unique @db.VarChar(255)
+  password   String   @db.Text
+  name       String?  @db.Text
+  active     Boolean  @default(true) @db.Boolean
+  created_at DateTime @default(now()) @db.Timestamptz()
+  updated_at DateTime @default(now()) @updatedAt @db.Timestamptz()
+}
+
+model institucional_categories {
+  id         String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name       String                 @db.Text
+  sort_order Int                    @default(0) @db.Integer
+  stores     institucional_stores[]
+  created_at DateTime               @default(now()) @db.Timestamptz()
+  updated_at DateTime               @default(now()) @updatedAt @db.Timestamptz()
+
+  @@index([sort_order])
+}
+
+model institucional_stores {
+  id           String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  category_id  String?                   @db.Uuid
+  category_ref institucional_categories? @relation(fields: [category_id], references: [id], onDelete: SetNull)
+  name         String                    @db.Text
+  description  String?                   @db.Text
+  address      String?                   @db.Text
+  hours        String?                   @db.Text
+  phone        String?                   @db.Text
+  whatsapp     String?                   @db.Text
+  email        String?                   @db.Text
+  instagram    String?                   @db.Text
+  website      String?                   @db.Text
+  photos       String[]                  @default([])
+  photo_labels String[]                  @default([])
+  highlighted  Boolean                   @default(false) @db.Boolean
+  archived     Boolean                   @default(false) @db.Boolean
+  sort_order   Int                       @default(0) @db.Integer
+  created_at   DateTime                  @default(now()) @db.Timestamptz()
+  updated_at   DateTime                  @default(now()) @updatedAt @db.Timestamptz()
+
+  @@index([category_id])
+  @@index([archived])
+  @@index([highlighted])
+  @@index([sort_order])
+}

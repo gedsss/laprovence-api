@@ -14,6 +14,7 @@ import { authRoutes } from './src/auth/auth.routes.js'
 import { catalogoRoutes } from './src/modules/catalogo/catalogo.routes.js'
 import { catalogoImagesRoutes } from './src/modules/catalogo_images/catalogo.images.routes.js'
 import { comprasRoutes } from './src/modules/compras/compras.routes.js'
+import { institucionalRoutes } from './src/modules/institucional/institucional.routes.js'
 import { listaItensRoutes } from './src/modules/lista_itens/lista_itens.routes.js'
 import { listasRoutes } from './src/modules/listas/listas.routes.js'
 import { premontadaItensRoutes } from './src/modules/premontada_itens/premontada_itens.routes.js'
@@ -102,6 +103,7 @@ fastify.register(catalogoImagesRoutes)
 fastify.register(listasRoutes)
 fastify.register(listaItensRoutes)
 fastify.register(comprasRoutes)
+fastify.register(institucionalRoutes)
 fastify.register(premontadasRoutes)
 fastify.register(premontadaItensRoutes)
 fastify.register(authRoutes)
