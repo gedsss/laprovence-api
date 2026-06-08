@@ -14,7 +14,8 @@ export const CreateCreditCardOrderSchema = z.object({
     .string()
     .trim()
     .min(1, 'A autenticacao 3DS e obrigatoria')
-    .max(200),
+    .max(200)
+    .optional(),
   recaptcha_token: z.string().min(1).optional(),
 })
 

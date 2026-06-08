@@ -44,7 +44,7 @@ export interface CreditCardCharge {
       name: string
       tax_id?: string
     }
-    authentication_method: {
+    authentication_method?: {
       type: 'THREEDS'
       id: string
     }
