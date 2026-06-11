@@ -1,0 +1,57 @@
+name: Deploy Homologacao API
+
+on:
+  push:
+    branches:
+      - develop
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: homologacao-api
+  cancel-in-progress: true
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  validate:
+    name: Validar API
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Dependency audit
+        run: npm audit --audit-level=high
+
+      - name: Generate Prisma client
+        run: npm run prisma:generate
+        env:
+          DATABASE_URL: postgresql://ci:ci@localhost/ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+  deploy:
+    name: Deploy pelo servidor de homologacao
+    needs: validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deployment source
+        run: |
+          echo "A VM de homologacao faz pull automatico de origin/develop via systemd timer."
+          echo "Nenhum secret de SSH e necessario no GitHub para este ambiente."

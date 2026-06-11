@@ -40,6 +40,10 @@ function parsePhone(telefone: string): PagBankPhone | undefined {
   }
 }
 
+function allowCreditCardWithout3ds() {
+  return process.env.PAGBANK_ALLOW_CARD_WITHOUT_3DS === 'true'
+}
+
 type CompraStatus = 'Pendente' | 'Aprovado' | 'Rejeitado' | 'Cancelado'
 
 const STATUS_MAP: Record<string, CompraStatus> = {
@@ -308,6 +312,7 @@ export class PagBankService {
       session: result.session,
       expires_at: result.expires_at,
       environment: getPagBankSdkEnvironment(),
+      allow_without_3ds: allowCreditCardWithout3ds(),
     }
   }
 
@@ -366,6 +371,12 @@ export class PagBankService {
       )
     }
 
+    if (!authentication_id && !allowCreditCardWithout3ds()) {
+      throw new BusinessRuleError(
+        'Autenticacao 3DS obrigatoria para pagamento com cartao'
+      )
+    }
+
     const phone = parsePhone(compra.telefone)
     const notification_urls = getNotificationUrls()
 
@@ -385,10 +396,12 @@ export class PagBankService {
           name: card_holder_name,
           tax_id: compra.cpf,
         },
-        authentication_method: {
-          type: 'THREEDS',
-          id: authentication_id,
-        },
+        ...(authentication_id && {
+          authentication_method: {
+            type: 'THREEDS' as const,
+            id: authentication_id,
+          },
+        }),
       },
     }
 
