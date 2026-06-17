@@ -87,6 +87,11 @@ jobs:
 
           REPO_URL="https://github.com/gedsss/laprovence-api.git"
           BRANCH="main"
+          if [ -s "$HOME/.nvm/nvm.sh" ]; then
+            . "$HOME/.nvm/nvm.sh"
+            nvm use 20 >/dev/null
+          fi
+          export PATH="$HOME/.nvm/versions/node/v20.20.2/bin:$PATH"
           PROD_BASE_DIR="${PROD_BASE_DIR/#\~/$HOME}"
           RELEASES_DIR="$PROD_BASE_DIR/releases"
           SHARED_DIR="$PROD_BASE_DIR/shared"
