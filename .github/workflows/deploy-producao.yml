@@ -113,13 +113,29 @@ jobs:
           git checkout --detach "$GITHUB_SHA"
           ln -sfn "$ENV_FILE" .env.production
 
+          npm ci --include=dev
+
           set -a
           . ./.env.production
           set +a
 
-          npm ci
           npm run prisma:generate
           npm run prisma:migrate:deploy
+
+          check_api() {
+            sudo -n /usr/bin/systemctl is-active "$PROD_SERVICE_NAME" >/dev/null
+            curl -fsS "http://127.0.0.1:$PROD_API_PORT/" >/dev/null
+          }
+
+          wait_for_api() {
+            for _ in $(seq 1 10); do
+              if check_api; then
+                return 0
+              fi
+              sleep 2
+            done
+            return 1
+          }
 
           PREVIOUS_RELEASE=""
           if [ -L "$CURRENT_LINK" ]; then
@@ -128,14 +144,14 @@ jobs:
 
           ln -sfn "$RELEASE_DIR" "$CURRENT_LINK"
 
-          if ! sudo -n /usr/bin/systemctl restart "$PROD_SERVICE_NAME"; then
+          if ! sudo -n /usr/bin/systemctl restart "$PROD_SERVICE_NAME" || ! wait_for_api; then
             if [ -n "$PREVIOUS_RELEASE" ] && [ -d "$PREVIOUS_RELEASE" ]; then
               ln -sfn "$PREVIOUS_RELEASE" "$CURRENT_LINK"
               sudo -n /usr/bin/systemctl restart "$PROD_SERVICE_NAME" || true
+              wait_for_api || true
             fi
             exit 1
           fi
 
-          sudo -n /usr/bin/systemctl is-active "$PROD_SERVICE_NAME"
           printf 'Deploy concluido: %s\n' "$RELEASE_DIR"
           REMOTE
