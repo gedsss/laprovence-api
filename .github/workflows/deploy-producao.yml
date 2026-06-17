@@ -48,8 +48,8 @@ jobs:
     runs-on: ubuntu-latest
     environment: producao-api
     env:
-      PROD_APP_DIR: ${{ vars.PROD_APP_DIR || '~/apps/laprovence-api-production' }}
-      PROD_APP_NAME: ${{ vars.PROD_APP_NAME || 'laprovence-api-production' }}
+      PROD_BASE_DIR: ${{ vars.PROD_BASE_DIR || '/home/lpvadmin/laprovence' }}
+      PROD_SERVICE_NAME: ${{ vars.PROD_SERVICE_NAME || 'laprovence-api.service' }}
       PROD_API_PORT: ${{ vars.PROD_API_PORT || '3668' }}
 
     steps:
@@ -82,29 +82,31 @@ jobs:
           PROD_SSH_PORT: ${{ secrets.PROD_SSH_PORT || '22' }}
         run: |
           ssh -i ~/.ssh/prod_key -p "$PROD_SSH_PORT" "$PROD_SSH_USER@$PROD_SSH_HOST" \
-            "PROD_APP_DIR='$PROD_APP_DIR' PROD_APP_NAME='$PROD_APP_NAME' PROD_API_PORT='$PROD_API_PORT' bash -s" <<'REMOTE'
+            "GITHUB_SHA='$GITHUB_SHA' PROD_BASE_DIR='$PROD_BASE_DIR' PROD_SERVICE_NAME='$PROD_SERVICE_NAME' PROD_API_PORT='$PROD_API_PORT' bash -s" <<'REMOTE'
           set -euo pipefail
 
           REPO_URL="https://github.com/gedsss/laprovence-api.git"
           BRANCH="main"
-          PROD_APP_DIR="${PROD_APP_DIR/#\~/$HOME}"
+          PROD_BASE_DIR="${PROD_BASE_DIR/#\~/$HOME}"
+          RELEASES_DIR="$PROD_BASE_DIR/releases"
+          SHARED_DIR="$PROD_BASE_DIR/shared"
+          CURRENT_LINK="$PROD_BASE_DIR/current-api"
+          ENV_FILE="$SHARED_DIR/api.env"
+          SHORT_SHA="$(printf '%s' "$GITHUB_SHA" | cut -c1-7)"
+          STAMP="$(date -u +%Y%m%d-%H%M%S)"
+          RELEASE_DIR="$RELEASES_DIR/api-$SHORT_SHA-$STAMP"
 
-          mkdir -p "$PROD_APP_DIR"
-          cd "$PROD_APP_DIR"
-
-          if [ ! -d ".git" ]; then
-            git init
-            git remote add origin "$REPO_URL"
-          fi
-
-          git fetch origin "$BRANCH"
-          git checkout -B "$BRANCH" "origin/$BRANCH"
-          git reset --hard "origin/$BRANCH"
-
-          if [ ! -f ".env.production" ]; then
-            echo "Crie $PROD_APP_DIR/.env.production com as variaveis de producao."
+          if [ ! -f "$ENV_FILE" ]; then
+            echo "Crie $ENV_FILE com as variaveis de producao."
             exit 1
           fi
+
+          mkdir -p "$RELEASES_DIR"
+          git clone --branch "$BRANCH" --single-branch "$REPO_URL" "$RELEASE_DIR"
+          cd "$RELEASE_DIR"
+          git fetch origin "$GITHUB_SHA"
+          git checkout --detach "$GITHUB_SHA"
+          ln -sfn "$ENV_FILE" .env.production
 
           set -a
           . ./.env.production
@@ -114,6 +116,21 @@ jobs:
           npm run prisma:generate
           npm run prisma:migrate:deploy
 
-          PM2_APP_NAME="$PROD_APP_NAME" PORT="$PROD_API_PORT" pm2 startOrRestart ecosystem.production.config.cjs
-          pm2 save
+          PREVIOUS_RELEASE=""
+          if [ -L "$CURRENT_LINK" ]; then
+            PREVIOUS_RELEASE="$(readlink -f "$CURRENT_LINK")"
+          fi
+
+          ln -sfn "$RELEASE_DIR" "$CURRENT_LINK"
+
+          if ! sudo -n /usr/bin/systemctl restart "$PROD_SERVICE_NAME"; then
+            if [ -n "$PREVIOUS_RELEASE" ] && [ -d "$PREVIOUS_RELEASE" ]; then
+              ln -sfn "$PREVIOUS_RELEASE" "$CURRENT_LINK"
+              sudo -n /usr/bin/systemctl restart "$PROD_SERVICE_NAME" || true
+            fi
+            exit 1
+          fi
+
+          sudo -n /usr/bin/systemctl is-active "$PROD_SERVICE_NAME"
+          printf 'Deploy concluido: %s\n' "$RELEASE_DIR"
           REMOTE
