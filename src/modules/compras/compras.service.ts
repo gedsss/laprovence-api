@@ -245,7 +245,7 @@ export class ComprasService {
     })
 
     if (!compra) {
-      throw new NotFoundError('Não foi possivel encontrar a compra')
+      throw new NotFoundError('Não foi possível encontrar a compra')
     }
 
     return withReservationExpiration(compra)

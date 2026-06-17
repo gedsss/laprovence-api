@@ -104,7 +104,7 @@ async function requireActiveReservation(
 ) {
   if (compra.status_pagamento !== 'Pendente') {
     throw new BusinessRuleError(
-      'Esta tentativa de pagamento nao esta mais ativa'
+      'Esta tentativa de pagamento não está mais ativa'
     )
   }
 
@@ -114,7 +114,7 @@ async function requireActiveReservation(
   })
   if (!active) {
     throw new BusinessRuleError(
-      'Esta tentativa de pagamento nao esta mais ativa'
+      'Esta tentativa de pagamento não está mais ativa'
     )
   }
 
@@ -189,7 +189,7 @@ function getNotificationUrls(): string[] | undefined {
   try {
     url = new URL(webhookUrl)
   } catch {
-    throw new ValidationError('PAGBANK_WEBHOOK_URL invalida')
+    throw new ValidationError('PAGBANK_WEBHOOK_URL inválida')
   }
 
   const isLocalhost = ['localhost', '127.0.0.1', '::1'].includes(url.hostname)
@@ -202,7 +202,7 @@ function getNotificationUrls(): string[] | undefined {
 
 function ensureValidAmount(amountInCents: number) {
   if (!Number.isFinite(amountInCents) || amountInCents <= 0) {
-    throw new ValidationError('Valor da compra invalido')
+    throw new ValidationError('Valor da compra inválido')
   }
 }
 
@@ -222,13 +222,13 @@ export class PagBankService {
     requireCheckoutAccess(compra.checkout_access_hash, accessToken)
     if (!compra.email)
       throw new ValidationError(
-        'E-mail do convidado e obrigatorio para pagamento'
+        'E-mail do convidado é obrigatório para pagamento'
       )
     if (compra.status_pagamento === 'Aprovado') {
-      throw new ValidationError('Esta compra ja foi paga')
+      throw new ValidationError('Esta compra já foi paga')
     }
     if (compra.status_pagamento === 'Rejeitado') {
-      throw new ValidationError('Esta tentativa de pagamento ja foi encerrada')
+      throw new ValidationError('Esta tentativa de pagamento já foi encerrada')
     }
     if (compra.status_pagamento === 'Cancelado') {
       throw new ValidationError('Esta tentativa de pagamento foi cancelada')
@@ -259,7 +259,7 @@ export class PagBankService {
       items: [
         {
           reference_id: compra.catalogo_id ?? 'cartao-presente',
-          name: compra.catalogo?.nome ?? 'Cartao Presente',
+          name: compra.catalogo?.nome ?? 'Cartão Presente',
           quantity: 1,
           unit_amount: amountInCents,
         },
@@ -295,17 +295,17 @@ export class PagBankService {
     requireCheckoutAccess(compra.checkout_access_hash, accessToken)
     if (!compra.email)
       throw new ValidationError(
-        'E-mail do convidado e obrigatorio para pagamento'
+        'E-mail do convidado é obrigatório para pagamento'
       )
     if (compra.pagbank_order_id) {
-      throw new BusinessRuleError('O pagamento desta compra ja foi iniciado')
+      throw new BusinessRuleError('O pagamento desta compra já foi iniciado')
     }
 
     await requireActiveReservation(compra)
 
     const result = await requestThreeDsSession()
     if (!result.session) {
-      throw new ValidationError('Nao foi possivel iniciar a autenticacao 3DS')
+      throw new ValidationError('Não foi possível iniciar a autenticação 3DS')
     }
 
     return {
@@ -338,13 +338,13 @@ export class PagBankService {
     requireCheckoutAccess(compra.checkout_access_hash, accessToken)
     if (!compra.email)
       throw new ValidationError(
-        'E-mail do convidado e obrigatorio para pagamento'
+        'E-mail do convidado é obrigatório para pagamento'
       )
     if (compra.status_pagamento === 'Aprovado') {
-      throw new ValidationError('Esta compra ja foi paga')
+      throw new ValidationError('Esta compra já foi paga')
     }
     if (compra.status_pagamento === 'Rejeitado') {
-      throw new ValidationError('Esta tentativa de pagamento ja foi encerrada')
+      throw new ValidationError('Esta tentativa de pagamento já foi encerrada')
     }
     if (compra.status_pagamento === 'Cancelado') {
       throw new ValidationError('Esta tentativa de pagamento foi cancelada')
@@ -361,19 +361,19 @@ export class PagBankService {
     ensureValidAmount(amountInCents)
     if (amountInCents < 100) {
       throw new ValidationError(
-        'Pagamento com cartao exige valor minimo de R$ 1,00'
+        'Pagamento com cartão exige valor mínimo de R$ 1,00'
       )
     }
 
     if (installments > 1 && amountInCents <= 100000) {
       throw new BusinessRuleError(
-        'Parcelamento disponivel apenas para compras acima de R$ 1.000,00'
+        'Parcelamento disponível apenas para compras acima de R$ 1.000,00'
       )
     }
 
     if (!authentication_id && !allowCreditCardWithout3ds()) {
       throw new BusinessRuleError(
-        'Autenticacao 3DS obrigatoria para pagamento com cartao'
+        'Autenticação 3DS obrigatória para pagamento com cartão'
       )
     }
 
@@ -382,7 +382,7 @@ export class PagBankService {
 
     const charge: CreditCardCharge = {
       reference_id: compra.id,
-      description: compra.catalogo?.nome ?? 'Cartao Presente',
+      description: compra.catalogo?.nome ?? 'Cartão Presente',
       amount: { value: amountInCents, currency: 'BRL' },
       payment_method: {
         type: 'CREDIT_CARD',
@@ -416,7 +416,7 @@ export class PagBankService {
       items: [
         {
           reference_id: compra.catalogo_id ?? 'cartao-presente',
-          name: compra.catalogo?.nome ?? 'Cartao Presente',
+          name: compra.catalogo?.nome ?? 'Cartão Presente',
           quantity: 1,
           unit_amount: amountInCents,
         },
@@ -435,7 +435,7 @@ export class PagBankService {
       where: { id: compra_id },
       data: {
         pagbank_order_id: order.id,
-        forma_pagamento: 'Cartao de Credito',
+        forma_pagamento: 'Cartão de Crédito',
       },
     })
 
@@ -463,7 +463,7 @@ export class PagBankService {
       pagbank_order = await getOrder(compra.pagbank_order_id)
       compra_status = await syncCompraStatusFromOrder(compra, pagbank_order)
     } catch {
-      // Retorna o status local se o PagBank estiver indisponivel.
+      // Retorna o status local se o PagBank estiver indisponível.
     }
 
     return { compra_status }
@@ -480,12 +480,12 @@ export class PagBankService {
         const order = await getOrder(compra.pagbank_order_id)
         compra_status = await syncCompraStatusFromOrder(compra, order)
       } catch {
-        // Se o PagBank nao responder, nao encerra uma tentativa ativa.
+        // Se o PagBank não responder, não encerra uma tentativa ativa.
       }
     }
 
     if (compra_status === 'Aprovado') {
-      throw new ValidationError('Esta compra ja foi paga')
+      throw new ValidationError('Esta compra já foi paga')
     }
 
     if (compra_status === 'Cancelado') {

@@ -102,7 +102,7 @@ export class InstitucionalService {
     if (!passwordMatches) throw new InvalidCredentialsError()
 
     const secret = process.env.JWT_PASS
-    if (!secret) throw new Error('JWT_PASS nao configurado')
+    if (!secret) throw new Error('JWT_PASS não configurado')
 
     const token = jwt.sign({ sub: admin.id, scope: SESSION_SCOPE }, secret, {
       expiresIn: '8h',
@@ -218,7 +218,7 @@ export class InstitucionalService {
 
   async upload(data: InstitucionalUploadInput) {
     const extension = extensionFor(data.content_type)
-    if (!extension) throw new ValidationError('Tipo de arquivo invalido')
+    if (!extension) throw new ValidationError('Tipo de arquivo inválido')
 
     const buffer = Buffer.from(normalizeBase64(data.data), 'base64')
     if (!buffer.length) throw new ValidationError('Arquivo vazio')

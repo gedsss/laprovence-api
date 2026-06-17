@@ -37,7 +37,7 @@ export class CatalogoController {
     const catalogo = await catalogoService.getCatalogo(filtros)
 
     return reply.status(200).send({
-      message: 'Sucesso ao buscar o catalogo',
+      message: 'Sucesso ao buscar o catálogo',
       success: true,
       ...catalogo,
     })

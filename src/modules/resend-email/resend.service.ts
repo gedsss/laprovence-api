@@ -5,13 +5,13 @@ import { prisma } from '../../../prisma/prismaClient.js'
 
 const from = process.env.EMAIL_FROM ?? 'La Provence <decor@laprovencevie.com.br>'
 const RECOVERY_SEND_ERROR =
-  'Nao foi possivel enviar o email de recuperacao agora. Tente novamente mais tarde.'
+  'Não foi possível enviar o e-mail de recuperação agora. Tente novamente mais tarde.'
 
 function getResendClient() {
   const apiKey = process.env.RESEND_API_KEY?.trim()
 
   if (!apiKey) {
-    throw new ValidationError('RESEND_API_KEY nao configurado')
+    throw new ValidationError('RESEND_API_KEY não configurado')
   }
 
   return new Resend(apiKey)
@@ -31,10 +31,10 @@ function buildRecuperarSenhaHtml(resetUrl: string) {
 
   return `
     <div style="font-family: Arial, sans-serif; color: #333; padding: 32px;">
-      <h2 style="color: #00300D;">Recuperacao de senha</h2>
-      <p>Recebemos uma solicitacao para redefinir sua senha.</p>
+      <h2 style="color: #00300D;">Recuperação de senha</h2>
+      <p>Recebemos uma solicitação para redefinir sua senha.</p>
       <p>
-        Clique no link abaixo para criar uma nova senha. O link e valido por
+        Clique no link abaixo para criar uma nova senha. O link é válido por
         <strong>15 minutos</strong>.
       </p>
       <p>
@@ -43,7 +43,7 @@ function buildRecuperarSenhaHtml(resetUrl: string) {
         </a>
       </p>
       <p style="margin-top: 32px; font-size: 12px; color: #888;">
-        Se voce nao solicitou isso, ignore este e-mail.
+        Se você não solicitou isso, ignore este e-mail.
       </p>
     </div>
   `
@@ -56,14 +56,14 @@ export class ResendService {
       select: { email: true },
     })
 
-    if (!user) throw new NotFoundError('Usuario')
+    if (!user) throw new NotFoundError('Usuário')
 
     try {
       const { data, error } = await getResendClient().emails.send({
         from,
         to: user.email,
         replyTo: from,
-        subject: 'Recuperacao de senha',
+        subject: 'Recuperação de senha',
         html: buildRecuperarSenhaHtml(resetUrl),
       })
 
