@@ -1,35 +1,35 @@
 import { z } from 'zod'
 
 export const CreatePixOrderSchema = z.object({
-  compra_id: z.uuid('O id da compra deve ser um UUID valido'),
+  compra_id: z.uuid('O id da compra deve ser um UUID válido'),
   recaptcha_token: z.string().min(1).optional(),
 })
 
 export const CreateCreditCardOrderSchema = z.object({
-  compra_id: z.uuid('O id da compra deve ser um UUID valido'),
+  compra_id: z.uuid('O id da compra deve ser um UUID válido'),
   installments: z.number().int().min(1).max(3).default(1),
-  card_holder_name: z.string().min(1, 'O nome do titular e obrigatorio'),
-  card_encrypted: z.string().min(1, 'O cartao criptografado e obrigatorio'),
+  card_holder_name: z.string().min(1, 'O nome do titular é obrigatório'),
+  card_encrypted: z.string().min(1, 'O cartão criptografado é obrigatório'),
   authentication_id: z
     .string()
     .trim()
-    .min(1, 'A autenticacao 3DS e obrigatoria')
+    .min(1, 'A autenticação 3DS é obrigatória')
     .max(200)
     .optional(),
   recaptcha_token: z.string().min(1).optional(),
 })
 
 export const CreateThreeDsSessionSchema = z.object({
-  compra_id: z.uuid('O id da compra deve ser um UUID valido'),
+  compra_id: z.uuid('O id da compra deve ser um UUID válido'),
   recaptcha_token: z.string().min(1).optional(),
 })
 
 export const GetOrderStatusSchema = z.object({
-  compra_id: z.uuid('O id da compra deve ser um UUID valido'),
+  compra_id: z.uuid('O id da compra deve ser um UUID válido'),
 })
 
 export const CancelOrderSchema = z.object({
-  compra_id: z.uuid('O id da compra deve ser um UUID valido'),
+  compra_id: z.uuid('O id da compra deve ser um UUID válido'),
 })
 
 export type CreatePixOrderInput = z.infer<typeof CreatePixOrderSchema>

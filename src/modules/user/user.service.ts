@@ -39,7 +39,7 @@ function throwUserCreateConflict(error: unknown): never {
     const field = resolveUniqueField(err)
     if (field === 'email') throw new DuplicateEmailError('')
     if (field === 'telefone') throw new DuplicateNumberError('')
-    throw new ValidationError('Dados ja cadastrados')
+    throw new ValidationError('Dados já cadastrados')
   }
 
   throw error
@@ -89,7 +89,7 @@ export class UserService {
     })
 
     if (!user) {
-      throw new NotFoundError('Erro ao encontrar o usuario')
+      throw new NotFoundError('Erro ao encontrar o usuário')
     }
 
     return user
@@ -133,12 +133,12 @@ export class UserService {
     })
 
     if (!existingUser) {
-      throw new NotFoundError('Usuario nao encontrado')
+      throw new NotFoundError('Usuário não encontrado')
     }
 
     if (existingUser.is_system) {
       throw new ValidationError(
-        'Nao e possivel deletar uma conta do tipo gestor'
+        'Não é possível deletar uma conta do tipo gestor'
       )
     }
 
@@ -146,7 +146,7 @@ export class UserService {
       where: { id },
     })
 
-    return { message: 'Usuario deletado com sucesso' }
+    return { message: 'Usuário deletado com sucesso' }
   }
 }
 

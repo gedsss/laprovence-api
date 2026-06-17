@@ -8,12 +8,12 @@ const optionalText = z
   .optional()
 
 export const InstitucionalLoginSchema = z.object({
-  email: z.email('Email invalido'),
-  password: z.string().min(1, 'Senha obrigatoria'),
+  email: z.email('E-mail inválido'),
+  password: z.string().min(1, 'Senha obrigatória'),
 })
 
 export const CreateInstitucionalCategorySchema = z.object({
-  name: z.string().trim().min(1, 'Nome obrigatorio'),
+  name: z.string().trim().min(1, 'Nome obrigatório'),
   sort_order: z.coerce.number().int().min(0).default(0),
 })
 
@@ -21,9 +21,9 @@ export const UpdateInstitucionalCategorySchema =
   CreateInstitucionalCategorySchema.partial()
 
 export const CreateInstitucionalStoreSchema = z.object({
-  name: z.string().trim().min(1, 'Nome obrigatorio'),
+  name: z.string().trim().min(1, 'Nome obrigatório'),
   category: z
-    .union([z.uuid('Categoria invalida'), z.literal(''), z.null()])
+    .union([z.uuid('Categoria inválida'), z.literal(''), z.null()])
     .optional()
     .transform(value => value || null),
   description: optionalText,

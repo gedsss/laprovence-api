@@ -17,7 +17,7 @@ export default fp(async function authPlugin(fastify) {
         if (!actor) {
           return reply.status(401).send({
             success: false,
-            message: 'Token invalido ou ausente',
+            message: 'Token inválido ou ausente',
           })
         }
         request.actor = actor
@@ -45,7 +45,7 @@ export default fp(async function authPlugin(fastify) {
         if (!token) {
           return reply.status(401).send({
             success: false,
-            message: 'Token invalido ou ausente',
+            message: 'Token inválido ou ausente',
           })
         }
 
@@ -57,7 +57,7 @@ export default fp(async function authPlugin(fastify) {
         if (!payload.sub || payload.scope !== 'institucional_admin') {
           return reply.status(401).send({
             success: false,
-            message: 'Token invalido ou ausente',
+            message: 'Token inválido ou ausente',
           })
         }
 
@@ -69,7 +69,7 @@ export default fp(async function authPlugin(fastify) {
         if (!admin) {
           return reply.status(401).send({
             success: false,
-            message: 'Token invalido ou ausente',
+            message: 'Token inválido ou ausente',
           })
         }
 
@@ -77,7 +77,7 @@ export default fp(async function authPlugin(fastify) {
       } catch {
         return reply.status(401).send({
           success: false,
-          message: 'Token invÃ¡lido ou ausente',
+          message: 'Token inválido ou ausente',
         })
       }
     }
@@ -101,7 +101,7 @@ export default fp(async function authPlugin(fastify) {
       if (request.headers['x-csrf-protection'] !== '1') {
         return reply.status(403).send({
           success: false,
-          message: 'Requisicao nao autorizada',
+          message: 'Requisição não autorizada',
         })
       }
     }

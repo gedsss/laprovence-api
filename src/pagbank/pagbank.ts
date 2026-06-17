@@ -43,7 +43,7 @@ export async function pagbankRequest<T>(
   if (!TOKEN) {
     throw new ExternalServiceError(
       'PagBank',
-      new Error('PAGBANK_TOKEN nao configurado')
+      new Error('PAGBANK_TOKEN não configurado')
     )
   }
 
@@ -94,7 +94,7 @@ export async function pagbankSdkRequest<T>(
   if (!TOKEN) {
     throw new ExternalServiceError(
       'PagBank',
-      new Error('PAGBANK_TOKEN nao configurado')
+      new Error('PAGBANK_TOKEN não configurado')
     )
   }
 

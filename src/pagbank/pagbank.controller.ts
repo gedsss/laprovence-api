@@ -93,7 +93,7 @@ export class PagBankController {
     )
 
     if (!isValidSignature) {
-      request.log.warn('[PagBank webhook] assinatura invalida')
+      request.log.warn('[PagBank webhook] assinatura inválida')
       return reply.status(401).send()
     }
 
@@ -103,7 +103,7 @@ export class PagBankController {
     if (!payload?.id) {
       return reply
         .status(400)
-        .send({ success: false, message: 'Payload invalido' })
+        .send({ success: false, message: 'Payload inválido' })
     }
 
     processWebhook(payload).catch(() => {

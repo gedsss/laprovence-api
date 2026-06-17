@@ -13,7 +13,7 @@ import type { CreateLoginInput } from './auth.schema.js'
 export interface CreateLoginSchemaDTO extends CreateLoginInput {}
 
 const PASSWORD_RESET_MESSAGE =
-  'Se o email existir, um link de recuperacao foi enviado'
+  'Se o e-mail existir, um link de recuperação foi enviado'
 
 export class AuthService {
   async getSessionUser(id: string) {
@@ -58,7 +58,7 @@ export class AuthService {
     if (!passwordCorreta) throw new InvalidCredentialsError()
 
     const secret = process.env.JWT_PASS
-    if (!secret) throw new Error('JWT_PASS nao configurado')
+    if (!secret) throw new Error('JWT_PASS não configurado')
 
     const token = jwt.sign({ sub: user.id, role: user.role }, secret, {
       expiresIn: '8h',
@@ -78,7 +78,7 @@ export class AuthService {
       select: { id: true },
     })
 
-    // Resposta generica para evitar enumeracao de contas.
+    // Resposta genérica para evitar enumeração de contas.
     if (!existingUser) {
       return {
         message: PASSWORD_RESET_MESSAGE,
@@ -125,7 +125,7 @@ export class AuthService {
     })
 
     if (!existingUser) {
-      throw new NotFoundError('Token invalido')
+      throw new NotFoundError('Token inválido')
     }
 
     if (
@@ -142,7 +142,7 @@ export class AuthService {
 
     if (passwordDuplicate) {
       throw new ValidationError(
-        'A nova password nao pode ser a mesma que a atual'
+        'A nova senha não pode ser a mesma que a atual'
       )
     }
 

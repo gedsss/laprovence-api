@@ -55,7 +55,7 @@ export class CatalogoService {
     })
 
     if (!catalogo) {
-      throw new NotFoundError('Erro o encontrar o catalogo')
+      throw new NotFoundError('Erro ao encontrar o catálogo')
     }
 
     await cacheSet(key, catalogo, TTL_ITEM)
@@ -69,7 +69,7 @@ export class CatalogoService {
     })
 
     if (!catalogo) {
-      throw new NotFoundError('Erro o encontrar o catalogo')
+      throw new NotFoundError('Erro ao encontrar o catálogo')
     }
 
     return catalogo
@@ -81,7 +81,7 @@ export class CatalogoService {
     })
 
     if (!catalogo) {
-      throw new NotFoundError('Erro o encontrar o catalogo')
+      throw new NotFoundError('Erro ao encontrar o catálogo')
     }
 
     return catalogo
@@ -93,7 +93,7 @@ export class CatalogoService {
     })
 
     if (!catalogo) {
-      throw new NotFoundError('Erro o encontrar o catalogo')
+      throw new NotFoundError('Erro ao encontrar o catálogo')
     }
 
     return catalogo
@@ -163,7 +163,7 @@ export class CatalogoService {
     })
 
     if (!catalogo) {
-      throw new NotFoundError('Não foi possivel encontrar o catalogo')
+      throw new NotFoundError('Não foi possível encontrar o catálogo')
     }
 
     let item
