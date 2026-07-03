@@ -13,10 +13,15 @@ import {
 import { prisma } from '../../../prisma/prismaClient.js'
 import type {
   CreateInstitucionalCategoryInput,
+  CreateInstitucionalPartnerCategoryInput,
+  CreateInstitucionalPartnerInput,
   CreateInstitucionalStoreInput,
   InstitucionalUploadInput,
+  ReorderInstitucionalPartnersInput,
   ReorderInstitucionalStoresInput,
   UpdateInstitucionalCategoryInput,
+  UpdateInstitucionalPartnerCategoryInput,
+  UpdateInstitucionalPartnerInput,
   UpdateInstitucionalStoreInput,
 } from './institucional.schema.js'
 
@@ -78,6 +83,15 @@ function toCategory(row: any) {
     sort_order: row.sort_order,
     created_at: row.created_at,
     updated_at: row.updated_at,
+  }
+}
+
+function toPartner(row: any) {
+  return {
+    ...row,
+    category: row.category_id,
+    category_id: undefined,
+    category_ref: undefined,
   }
 }
 
@@ -154,6 +168,44 @@ export class InstitucionalService {
     await prisma.institucional_categories.delete({ where: { id } })
   }
 
+  async listPartnerCategories() {
+    const categories =
+      await prisma.institucional_partner_categories.findMany({
+        orderBy: [{ sort_order: 'asc' }, { name: 'asc' }],
+      })
+
+    return categories.map(toCategory)
+  }
+
+  async createPartnerCategory(
+    data: CreateInstitucionalPartnerCategoryInput
+  ) {
+    const category =
+      await prisma.institucional_partner_categories.create({ data })
+    return toCategory(category)
+  }
+
+  async updatePartnerCategory(
+    id: string,
+    data: UpdateInstitucionalPartnerCategoryInput
+  ) {
+    await this.ensurePartnerCategory(id)
+    const updateData: Record<string, string | number> = {}
+    if (data.name !== undefined) updateData.name = data.name
+    if (data.sort_order !== undefined) updateData.sort_order = data.sort_order
+
+    const category = await prisma.institucional_partner_categories.update({
+      where: { id },
+      data: updateData,
+    })
+    return toCategory(category)
+  }
+
+  async deletePartnerCategory(id: string) {
+    await this.ensurePartnerCategory(id)
+    await prisma.institucional_partner_categories.delete({ where: { id } })
+  }
+
   async listStores(includeArchived = false) {
     const query: Parameters<
       typeof prisma.institucional_stores.findMany
@@ -216,6 +268,62 @@ export class InstitucionalService {
     )
   }
 
+  async listPartners() {
+    const partners = await prisma.institucional_partners.findMany({
+      orderBy: [{ sort_order: 'asc' }, { name: 'asc' }],
+      include: { category_ref: true },
+    })
+
+    return partners.map(toPartner)
+  }
+
+  async getPartner(id: string) {
+    const partner = await prisma.institucional_partners.findUnique({
+      where: { id },
+      include: { category_ref: true },
+    })
+
+    if (!partner) throw new NotFoundError('Parceiro institucional', id)
+
+    return toPartner(partner)
+  }
+
+  async createPartner(data: CreateInstitucionalPartnerInput) {
+    const partner = await prisma.institucional_partners.create({
+      data: this.createPartnerData(data),
+      include: { category_ref: true },
+    })
+
+    return toPartner(partner)
+  }
+
+  async updatePartner(id: string, data: UpdateInstitucionalPartnerInput) {
+    await this.ensurePartner(id)
+    const partner = await prisma.institucional_partners.update({
+      where: { id },
+      data: this.updatePartnerData(data),
+      include: { category_ref: true },
+    })
+
+    return toPartner(partner)
+  }
+
+  async deletePartner(id: string) {
+    await this.ensurePartner(id)
+    await prisma.institucional_partners.delete({ where: { id } })
+  }
+
+  async reorderPartners(data: ReorderInstitucionalPartnersInput) {
+    await prisma.$transaction(
+      data.ids.map((id, index) =>
+        prisma.institucional_partners.update({
+          where: { id },
+          data: { sort_order: index },
+        })
+      )
+    )
+  }
+
   async upload(data: InstitucionalUploadInput) {
     const extension = extensionFor(data.content_type)
     if (!extension) throw new ValidationError('Tipo de arquivo inválido')
@@ -262,12 +370,31 @@ export class InstitucionalService {
     if (!category) throw new NotFoundError('Categoria institucional', id)
   }
 
+  private async ensurePartnerCategory(id: string) {
+    const category =
+      await prisma.institucional_partner_categories.findUnique({
+        where: { id },
+        select: { id: true },
+      })
+    if (!category) {
+      throw new NotFoundError('Categoria de parceiro institucional', id)
+    }
+  }
+
   private async ensureStore(id: string) {
     const store = await prisma.institucional_stores.findUnique({
       where: { id },
       select: { id: true },
     })
     if (!store) throw new NotFoundError('Loja institucional', id)
+  }
+
+  private async ensurePartner(id: string) {
+    const partner = await prisma.institucional_partners.findUnique({
+      where: { id },
+      select: { id: true },
+    })
+    if (!partner) throw new NotFoundError('Parceiro institucional', id)
   }
 
   private async createInitialAdminIfNeeded(email: string, password: string) {
@@ -349,6 +476,52 @@ export class InstitucionalService {
     }
 
     return storeData
+  }
+
+  private createPartnerData(
+    data: CreateInstitucionalPartnerInput
+  ): Prisma.institucional_partnersCreateInput {
+    const partnerData: Prisma.institucional_partnersCreateInput = {
+      name: data.name,
+      ...(data.description !== undefined && { description: data.description }),
+      ...(data.hours !== undefined && { hours: data.hours }),
+      ...(data.phone !== undefined && { phone: data.phone }),
+      ...(data.whatsapp !== undefined && { whatsapp: data.whatsapp }),
+      ...(data.email !== undefined && { email: data.email }),
+      ...(data.instagram !== undefined && { instagram: data.instagram }),
+      ...(data.website !== undefined && { website: data.website }),
+      ...(data.sort_order !== undefined && { sort_order: data.sort_order }),
+    }
+
+    if (data.category) {
+      partnerData.category_ref = { connect: { id: data.category } }
+    }
+
+    return partnerData
+  }
+
+  private updatePartnerData(
+    data: UpdateInstitucionalPartnerInput
+  ): Prisma.institucional_partnersUpdateInput {
+    const partnerData: Prisma.institucional_partnersUpdateInput = {
+      ...(data.name !== undefined && { name: data.name }),
+      ...(data.description !== undefined && { description: data.description }),
+      ...(data.hours !== undefined && { hours: data.hours }),
+      ...(data.phone !== undefined && { phone: data.phone }),
+      ...(data.whatsapp !== undefined && { whatsapp: data.whatsapp }),
+      ...(data.email !== undefined && { email: data.email }),
+      ...(data.instagram !== undefined && { instagram: data.instagram }),
+      ...(data.website !== undefined && { website: data.website }),
+      ...(data.sort_order !== undefined && { sort_order: data.sort_order }),
+    }
+
+    if (data.category !== undefined) {
+      partnerData.category_ref = data.category
+        ? { connect: { id: data.category } }
+        : { disconnect: true }
+    }
+
+    return partnerData
   }
 }
 

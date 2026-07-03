@@ -32,12 +32,24 @@ export async function institucionalRoutes(app: FastifyInstance) {
     return institucionalController.listCategories(request, reply)
   })
 
+  app.get('/institucional/partner-categories', async (request, reply) => {
+    return institucionalController.listPartnerCategories(request, reply)
+  })
+
   app.get('/institucional/stores', async (request, reply) => {
     return institucionalController.listStores(request, reply)
   })
 
   app.get('/institucional/stores/:id', async (request, reply) => {
     return institucionalController.getStore(request, reply)
+  })
+
+  app.get('/institucional/partners', async (request, reply) => {
+    return institucionalController.listPartners(request, reply)
+  })
+
+  app.get('/institucional/partners/:id', async (request, reply) => {
+    return institucionalController.getPartner(request, reply)
   })
 
   app.get('/institucional/media/:fileName', async (request, reply) => {
@@ -73,6 +85,38 @@ export async function institucionalRoutes(app: FastifyInstance) {
     { preHandler: writePreHandlers.map(handler => app[handler]) },
     async (request, reply) => {
       return institucionalController.deleteCategory(request, reply)
+    }
+  )
+
+  app.get(
+    '/institucional/admin/partner-categories',
+    { preHandler: adminPreHandlers.map(handler => app[handler]) },
+    async (request, reply) => {
+      return institucionalController.listPartnerCategories(request, reply)
+    }
+  )
+
+  app.post(
+    '/institucional/admin/partner-categories',
+    { preHandler: writePreHandlers.map(handler => app[handler]) },
+    async (request, reply) => {
+      return institucionalController.createPartnerCategory(request, reply)
+    }
+  )
+
+  app.put(
+    '/institucional/admin/partner-categories/:id',
+    { preHandler: writePreHandlers.map(handler => app[handler]) },
+    async (request, reply) => {
+      return institucionalController.updatePartnerCategory(request, reply)
+    }
+  )
+
+  app.delete(
+    '/institucional/admin/partner-categories/:id',
+    { preHandler: writePreHandlers.map(handler => app[handler]) },
+    async (request, reply) => {
+      return institucionalController.deletePartnerCategory(request, reply)
     }
   )
 
@@ -113,6 +157,46 @@ export async function institucionalRoutes(app: FastifyInstance) {
     { preHandler: writePreHandlers.map(handler => app[handler]) },
     async (request, reply) => {
       return institucionalController.reorderStores(request, reply)
+    }
+  )
+
+  app.get(
+    '/institucional/admin/partners',
+    { preHandler: adminPreHandlers.map(handler => app[handler]) },
+    async (request, reply) => {
+      return institucionalController.listPartners(request, reply)
+    }
+  )
+
+  app.post(
+    '/institucional/admin/partners',
+    { preHandler: writePreHandlers.map(handler => app[handler]) },
+    async (request, reply) => {
+      return institucionalController.createPartner(request, reply)
+    }
+  )
+
+  app.patch(
+    '/institucional/admin/partners/reorder',
+    { preHandler: writePreHandlers.map(handler => app[handler]) },
+    async (request, reply) => {
+      return institucionalController.reorderPartners(request, reply)
+    }
+  )
+
+  app.put(
+    '/institucional/admin/partners/:id',
+    { preHandler: writePreHandlers.map(handler => app[handler]) },
+    async (request, reply) => {
+      return institucionalController.updatePartner(request, reply)
+    }
+  )
+
+  app.delete(
+    '/institucional/admin/partners/:id',
+    { preHandler: writePreHandlers.map(handler => app[handler]) },
+    async (request, reply) => {
+      return institucionalController.deletePartner(request, reply)
     }
   )
 
