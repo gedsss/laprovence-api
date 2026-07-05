@@ -20,6 +20,12 @@ export const CreateInstitucionalCategorySchema = z.object({
 export const UpdateInstitucionalCategorySchema =
   CreateInstitucionalCategorySchema.partial()
 
+export const CreateInstitucionalPartnerCategorySchema =
+  CreateInstitucionalCategorySchema
+
+export const UpdateInstitucionalPartnerCategorySchema =
+  CreateInstitucionalPartnerCategorySchema.partial()
+
 export const CreateInstitucionalStoreSchema = z.object({
   name: z.string().trim().min(1, 'Nome obrigatório'),
   category: z
@@ -44,7 +50,30 @@ export const CreateInstitucionalStoreSchema = z.object({
 export const UpdateInstitucionalStoreSchema =
   CreateInstitucionalStoreSchema.partial()
 
+export const CreateInstitucionalPartnerSchema = z.object({
+  name: z.string().trim().min(1, 'Nome obrigatório'),
+  category: z
+    .union([z.uuid('Categoria inválida'), z.literal(''), z.null()])
+    .optional()
+    .transform(value => value || null),
+  description: optionalText,
+  hours: optionalText,
+  phone: optionalText,
+  whatsapp: optionalText,
+  email: optionalText,
+  instagram: optionalText,
+  website: optionalText,
+  sort_order: z.coerce.number().int().min(0).default(0),
+})
+
+export const UpdateInstitucionalPartnerSchema =
+  CreateInstitucionalPartnerSchema.partial()
+
 export const ReorderInstitucionalStoresSchema = z.object({
+  ids: z.array(z.uuid()).min(1),
+})
+
+export const ReorderInstitucionalPartnersSchema = z.object({
   ids: z.array(z.uuid()).min(1),
 })
 
@@ -70,13 +99,28 @@ export type CreateInstitucionalCategoryInput = z.infer<
 export type UpdateInstitucionalCategoryInput = z.infer<
   typeof UpdateInstitucionalCategorySchema
 >
+export type CreateInstitucionalPartnerCategoryInput = z.infer<
+  typeof CreateInstitucionalPartnerCategorySchema
+>
+export type UpdateInstitucionalPartnerCategoryInput = z.infer<
+  typeof UpdateInstitucionalPartnerCategorySchema
+>
 export type CreateInstitucionalStoreInput = z.infer<
   typeof CreateInstitucionalStoreSchema
 >
 export type UpdateInstitucionalStoreInput = z.infer<
   typeof UpdateInstitucionalStoreSchema
 >
+export type CreateInstitucionalPartnerInput = z.infer<
+  typeof CreateInstitucionalPartnerSchema
+>
+export type UpdateInstitucionalPartnerInput = z.infer<
+  typeof UpdateInstitucionalPartnerSchema
+>
 export type ReorderInstitucionalStoresInput = z.infer<
   typeof ReorderInstitucionalStoresSchema
+>
+export type ReorderInstitucionalPartnersInput = z.infer<
+  typeof ReorderInstitucionalPartnersSchema
 >
 export type InstitucionalUploadInput = z.infer<typeof InstitucionalUploadSchema>

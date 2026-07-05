@@ -2,12 +2,17 @@ import type { FastifyReply, FastifyRequest } from 'fastify'
 import { requireInstitucionalAdmin } from '../../lib/access-control.js'
 import {
   CreateInstitucionalCategorySchema,
+  CreateInstitucionalPartnerCategorySchema,
+  CreateInstitucionalPartnerSchema,
   CreateInstitucionalStoreSchema,
   InstitucionalLoginSchema,
   InstitucionalStoreQuerySchema,
   InstitucionalUploadSchema,
+  ReorderInstitucionalPartnersSchema,
   ReorderInstitucionalStoresSchema,
   UpdateInstitucionalCategorySchema,
+  UpdateInstitucionalPartnerCategorySchema,
+  UpdateInstitucionalPartnerSchema,
   UpdateInstitucionalStoreSchema,
 } from './institucional.schema.js'
 import { institucionalService } from './institucional.service.js'
@@ -75,6 +80,42 @@ export class InstitucionalController {
     return reply.send({ success: true })
   }
 
+  async listPartnerCategories(
+    _request: FastifyRequest,
+    reply: FastifyReply
+  ) {
+    const data = await institucionalService.listPartnerCategories()
+    return reply.send({ success: true, data })
+  }
+
+  async createPartnerCategory(
+    request: FastifyRequest,
+    reply: FastifyReply
+  ) {
+    const input = CreateInstitucionalPartnerCategorySchema.parse(request.body)
+    const data = await institucionalService.createPartnerCategory(input)
+    return reply.status(201).send({ success: true, data })
+  }
+
+  async updatePartnerCategory(
+    request: FastifyRequest,
+    reply: FastifyReply
+  ) {
+    const { id } = request.params as { id: string }
+    const input = UpdateInstitucionalPartnerCategorySchema.parse(request.body)
+    const data = await institucionalService.updatePartnerCategory(id, input)
+    return reply.send({ success: true, data })
+  }
+
+  async deletePartnerCategory(
+    request: FastifyRequest,
+    reply: FastifyReply
+  ) {
+    const { id } = request.params as { id: string }
+    await institucionalService.deletePartnerCategory(id)
+    return reply.send({ success: true })
+  }
+
   async listStores(request: FastifyRequest, reply: FastifyReply) {
     const { includeArchived } = InstitucionalStoreQuerySchema.parse(
       request.query
@@ -111,6 +152,42 @@ export class InstitucionalController {
   async reorderStores(request: FastifyRequest, reply: FastifyReply) {
     const input = ReorderInstitucionalStoresSchema.parse(request.body)
     await institucionalService.reorderStores(input)
+    return reply.send({ success: true })
+  }
+
+  async listPartners(_request: FastifyRequest, reply: FastifyReply) {
+    const data = await institucionalService.listPartners()
+    return reply.send({ success: true, data })
+  }
+
+  async getPartner(request: FastifyRequest, reply: FastifyReply) {
+    const { id } = request.params as { id: string }
+    const data = await institucionalService.getPartner(id)
+    return reply.send({ success: true, data })
+  }
+
+  async createPartner(request: FastifyRequest, reply: FastifyReply) {
+    const input = CreateInstitucionalPartnerSchema.parse(request.body)
+    const data = await institucionalService.createPartner(input)
+    return reply.status(201).send({ success: true, data })
+  }
+
+  async updatePartner(request: FastifyRequest, reply: FastifyReply) {
+    const { id } = request.params as { id: string }
+    const input = UpdateInstitucionalPartnerSchema.parse(request.body)
+    const data = await institucionalService.updatePartner(id, input)
+    return reply.send({ success: true, data })
+  }
+
+  async deletePartner(request: FastifyRequest, reply: FastifyReply) {
+    const { id } = request.params as { id: string }
+    await institucionalService.deletePartner(id)
+    return reply.send({ success: true })
+  }
+
+  async reorderPartners(request: FastifyRequest, reply: FastifyReply) {
+    const input = ReorderInstitucionalPartnersSchema.parse(request.body)
+    await institucionalService.reorderPartners(input)
     return reply.send({ success: true })
   }
 
