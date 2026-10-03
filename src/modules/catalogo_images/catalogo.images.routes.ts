@@ -4,7 +4,10 @@ import { catalogoImagesController } from './catalogo.images.controller.js'
 export async function catalogoImagesRoutes(app: FastifyInstance) {
   app.post(
     '/catalogo-images',
-    { preHandler: [app.authenticate, app.requireGestor, app.requireCsrf] },
+    {
+      bodyLimit: 8 * 1024 * 1024,
+      preHandler: [app.authenticate, app.requireGestor, app.requireCsrf],
+    },
     async (request, reply) => {
       return catalogoImagesController.createCatalogoImages(request, reply)
     }
@@ -16,7 +19,10 @@ export async function catalogoImagesRoutes(app: FastifyInstance) {
 
   app.put(
     '/catalogo-images/:id',
-    { preHandler: [app.authenticate, app.requireGestor, app.requireCsrf] },
+    {
+      bodyLimit: 8 * 1024 * 1024,
+      preHandler: [app.authenticate, app.requireGestor, app.requireCsrf],
+    },
     async (request, reply) => {
       return catalogoImagesController.updateCatalogoImages(request, reply)
     }
