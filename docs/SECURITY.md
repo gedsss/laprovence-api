@@ -52,7 +52,7 @@ PagBank requests must avoid logging customer PII and card payloads. Webhooks mus
 ## Production Blockers
 
 - Define and execute retention, export, correction, and deletion procedures for LGPD data subject requests before retaining real customer records.
-- Deploy only behind HTTPS with `NODE_ENV=production`, an explicit `CORS_ORIGINS`, and `TRUST_PROXY` configured for the known reverse proxy hop count.
+- Deploy only behind HTTPS with `NODE_ENV=production`, an explicit `CORS_ORIGINS`, and `TRUST_PROXY` set to the reverse proxy address (e.g. `loopback`); numeric hop counts are mapped to `loopback`.
 
 ## Required Checks
 

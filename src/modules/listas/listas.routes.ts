@@ -4,7 +4,10 @@ import { listasController } from './listas.controller.js'
 export async function listasRoutes(app: FastifyInstance) {
   app.post(
     '/listas',
-    { preHandler: [app.authenticate, app.requireCsrf] },
+    {
+      bodyLimit: 8 * 1024 * 1024,
+      preHandler: [app.authenticate, app.requireCsrf],
+    },
     async (request, reply) => {
       return listasController.createListas(request, reply)
     }
@@ -40,7 +43,10 @@ export async function listasRoutes(app: FastifyInstance) {
 
   app.put(
     '/listas/:id',
-    { preHandler: [app.authenticate, app.requireCsrf] },
+    {
+      bodyLimit: 8 * 1024 * 1024,
+      preHandler: [app.authenticate, app.requireCsrf],
+    },
     async (request, reply) => {
       return listasController.updateListas(request, reply)
     }

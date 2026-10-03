@@ -33,7 +33,9 @@ if (!jwtSecret || jwtSecret.length < 32) {
 function trustProxySetting() {
   const configured = process.env.TRUST_PROXY?.trim()
   if (!configured) return false
-  if (/^\d+$/.test(configured)) return Number(configured)
+  // Fastify no longer honors hop counts (GHSA-3m5p-2c4r-xxw2); the API sits
+  // behind a reverse proxy on the same host, so trust loopback peers instead.
+  if (/^\d+$/.test(configured)) return Number(configured) > 0 ? 'loopback' : false
   return configured
 }
 

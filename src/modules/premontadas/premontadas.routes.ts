@@ -4,7 +4,10 @@ import { premontadasController } from './premontadas.controller.js'
 export async function premontadasRoutes(app: FastifyInstance) {
   app.post(
     '/premontadas',
-    { preHandler: [app.authenticate, app.requireGestor, app.requireCsrf] },
+    {
+      bodyLimit: 8 * 1024 * 1024,
+      preHandler: [app.authenticate, app.requireGestor, app.requireCsrf],
+    },
     async (request, reply) => {
       return premontadasController.createPremontadas(request, reply)
     }
@@ -20,7 +23,10 @@ export async function premontadasRoutes(app: FastifyInstance) {
 
   app.put(
     '/premontadas/:id',
-    { preHandler: [app.authenticate, app.requireGestor, app.requireCsrf] },
+    {
+      bodyLimit: 8 * 1024 * 1024,
+      preHandler: [app.authenticate, app.requireGestor, app.requireCsrf],
+    },
     async (request, reply) => {
       return premontadasController.updatePremontadas(request, reply)
     }
