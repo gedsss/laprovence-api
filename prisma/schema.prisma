@@ -26,6 +26,8 @@ enum Setor {
   Mobiliario
   Vasos
   Complementos
+  Lavabo
+  Tapetes
 }
 
 enum StatusCatalogo {

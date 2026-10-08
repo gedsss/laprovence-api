@@ -15,6 +15,8 @@ export const CreateCatalogoSchema = z.object({
     'Mobiliario',
     'Vasos',
     'Complementos',
+    'Lavabo',
+    'Tapetes',
   ]),
   estoque: z.number().default(0),
   quantidade: z.number().default(1),
@@ -45,6 +47,8 @@ export const UpdateCatalogoSchema = z.object({
       'Mobiliario',
       'Vasos',
       'Complementos',
+      'Lavabo',
+      'Tapetes',
     ])
     .optional(),
   estoque: z.number().default(0).optional(),

@@ -160,7 +160,7 @@ Todos os campos são opcionais:
 }
 ```
 
-**Setores disponíveis:** `Mesa_posta`, `Prataria`, `Adornos`, `Aromas`, `Mobiliario`, `Vasos`, `Complementos`
+**Setores disponíveis:** `Mesa_posta`, `Prataria`, `Adornos`, `Aromas`, `Mobiliario`, `Vasos`, `Complementos`, `Lavabo`, `Tapetes`
 
 **Status disponíveis:** `Ativo`, `Inativo`
 
